@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Collection Explorer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0f1419;
+            --surface: #1a2332;
+            --surface2: #243447;
+            --accent: #e6a817;
+            --accent2: #4ecdc4;
+            --text: #e8eaed;
+            --text-dim: #8899a6;
+            --border: #2f3f4f;
+            --baseball: #c0392b;
+            --basketball: #e67e22;
+            --football: #27ae60;
+            --soccer: #2980b9;
+            --hockey: #8e44ad;
+            --other: #7f8c8d;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
+            border-bottom: 2px solid var(--accent);
+            padding: 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: -0.5px;
+        }
+        .header p { color: var(--text-dim); margin-top: 0.4rem; font-size: 1rem; }
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            padding: 1.5rem 2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+        .stat-card {
+            text-align: center;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: var(--surface2);
+        }
+        .stat-card .num {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .stat-card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            padding: 1.2rem 2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+        .controls input, .controls select {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.6rem 1rem;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .controls input:focus, .controls select:focus { border-color: var(--accent); }
+        .controls input[type="text"] { flex: 1; min-width: 200px; }
+        .controls select { min-width: 130px; }
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            padding: 0 2rem;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+        }
+        .tab-bar button {
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            padding: 0.8rem 1.4rem;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .tab-bar button:hover { color: var(--text); }
+        .tab-bar button.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+            font-weight: 600;
+        }
+        .content { padding: 1.5rem 2rem; }
+        .results-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            color: var(--text-dim);
+            font-size: 0.85rem;
+        }
+        .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        thead { background: var(--surface2); position: sticky; top: 0; z-index: 2; }
+        th {
+            padding: 0.7rem 0.8rem;
+            text-align: left;
+            color: var(--accent);
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        th:hover { color: var(--accent2); }
+        th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
+        td { padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); white-space: nowrap; }
+        tr:hover td { background: var(--surface2); }
+        .sport-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .sport-baseball { background: var(--baseball); }
+        .sport-basketball { background: var(--basketball); }
+        .sport-football { background: var(--football); }
+        .sport-soccer { background: var(--soccer); }
+        .sport-hockey { background: var(--hockey); }
+        .sport-other { background: var(--other); }
+        .graded-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            background: var(--accent);
+            color: var(--bg);
+        }
+        .price { color: var(--accent2); font-weight: 600; }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.2rem;
+        }
+        .pagination button {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .pagination button:hover { border-color: var(--accent); color: var(--accent); }
+        .pagination button:disabled { opacity: 0.4; cursor: default; }
+        .pagination span { color: var(--text-dim); font-size: 0.85rem; }
+        #charts-view { display: none; }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+        }
+        .chart-card h3 { color: var(--accent); margin-bottom: 1rem; font-size: 1rem; }
+        .bar-chart { display: flex; flex-direction: column; gap: 0.4rem; }
+        .bar-row { display: flex; align-items: center; gap: 0.5rem; }
+        .bar-label { width: 100px; font-size: 0.8rem; color: var(--text-dim); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .bar-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 0.7rem; font-weight: 600; color: #fff; min-width: 30px; }
+        .bar-value { width: 50px; font-size: 0.8rem; color: var(--text-dim); text-align: right; }
+        #highlights-view { display: none; }
+        .highlight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+        }
+        .highlight-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.2rem;
+            transition: border-color 0.2s;
+        }
+        .highlight-card:hover { border-color: var(--accent); }
+        .highlight-card .player { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+        .highlight-card .details { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+        .highlight-card .card-price { font-size: 1.3rem; color: var(--accent); font-weight: 700; margin-top: 0.5rem; }
+        .loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem;
+            color: var(--text-dim);
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 1rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+            .header h1 { font-size: 1.6rem; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); padding: 1rem; }
+            .controls { padding: 1rem; }
+            .content { padding: 1rem; }
+            .tab-bar { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Card Collection Explorer</h1>
+        <p>Interactive collection browser and analytics</p>
+    </div>
+    <div class="stats-bar" id="stats-bar"></div>
+    <div class="tab-bar" id="tab-bar">
+        <button class="active" data-view="table">Browse</button>
+        <button data-view="charts">Analytics</button>
+        <button data-view="highlights">Top Cards</button>
+    </div>
+    <div class="controls" id="controls">
+        <input type="text" id="search" placeholder="Search player, team, or series...">
+        <select id="filter-sport"><option value="">All Sports</option></select>
+        <select id="filter-decade"><option value="">All Decades</option></select>
+        <select id="filter-graded"><option value="">All Conditions</option><option value="graded">Graded Only</option><option value="raw">Ungraded Only</option></select>
+        <select id="filter-series"><option value="">All Series</option></select>
+    </div>
+    <div class="content">
+        <div id="table-view">
+            <div class="results-info">
+                <span id="results-count"></span>
+                <span id="results-value"></span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr id="table-head"></tr></thead>
+                    <tbody id="table-body"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+        <div id="charts-view"><div class="chart-grid" id="chart-grid"></div></div>
+        <div id="highlights-view"><div class="highlight-grid" id="highlight-grid"></div></div>
+        <div class="loading" id="loading"><div class="spinner"></div><span>Loading collection...</span></div>
+    </div>
+<script>
+let ALL_CARDS = [];
+let filtered = [];
+let currentPage = 1;
+const PAGE_SIZE = 100;
+let sortCol = 'price';
+let sortDir = -1;
+
+const columns = [
+    { key: 'classification', label: 'Sport', width: '80px' },
+    { key: 'year', label: 'Year', width: '60px' },
+    { key: 'player_name', label: 'Player', width: '200px' },
+    { key: 'team_name', label: 'Team', width: '180px' },
+    { key: 'series', label: 'Series', width: '180px' },
+    { key: 'set', label: 'Set', width: '120px' },
+    { key: 'card_number', label: '#', width: '50px' },
+    { key: 'parallel', label: 'Parallel', width: '120px' },
+    { key: 'grader', label: 'Grade', width: '80px' },
+    { key: 'price', label: 'Value', width: '80px' }
+];
+
+async function init() {
+    try {
+        const resp = await fetch('cards.json');
+        ALL_CARDS = await resp.json();
+        ALL_CARDS.forEach(c => { c._price = parseFloat(c.price) || 0; c._year = parseInt(c.year) || 0; });
+        document.getElementById('loading').style.display = 'none';
+        buildFilters();
+        buildStats();
+        buildTableHead();
+        applyFilters();
+        setupListeners();
+    } catch (e) {
+        document.getElementById('loading').innerHTML = '<span style="color:#e74c3c;">Error loading data. Make sure cards.json is in the same folder.</span>';
+    }
+}
+
+function buildFilters() {
+    const sports = [...new Set(ALL_CARDS.map(c => c.classification))].sort();
+    const sportSel = document.getElementById('filter-sport');
+    sports.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s.charAt(0).toUpperCase() + s.slice(1); sportSel.appendChild(o); });
+
+    const decades = [...new Set(ALL_CARDS.map(c => Math.floor(c._year / 10) * 10))].sort((a,b) => a-b);
+    const decSel = document.getElementById('filter-decade');
+    decades.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d + 's'; decSel.appendChild(o); });
+
+    const topSeries = Object.entries(ALL_CARDS.reduce((acc, c) => { acc[c.series] = (acc[c.series]||0)+1; return acc; }, {}))
+        .sort((a,b) => b[1]-a[1]).slice(0, 50);
+    const serSel = document.getElementById('filter-series');
+    topSeries.forEach(([s]) => { const o = document.createElement('option'); o.value = s; o.textContent = s; serSel.appendChild(o); });
+}
+
+function buildStats() {
+    const total = ALL_CARDS.length;
+    const totalVal = ALL_CARDS.reduce((s, c) => s + c._price, 0);
+    const graded = ALL_CARDS.filter(c => c.grader && c.grader !== '').length;
+    const sports = new Set(ALL_CARDS.map(c => c.classification)).size;
+    const players = new Set(ALL_CARDS.map(c => c.player_name)).size;
+    const yearSpan = Math.min(...ALL_CARDS.map(c=>c._year)) + ' - ' + Math.max(...ALL_CARDS.map(c=>c._year));
+
+    document.getElementById('stats-bar').innerHTML = `
+        <div class="stat-card"><div class="num">${total.toLocaleString()}</div><div class="label">Total Cards</div></div>
+        <div class="stat-card"><div class="num">$${totalVal.toLocaleString(undefined,{maximumFractionDigits:0})}</div><div class="label">Est. Value</div></div>
+        <div class="stat-card"><div class="num">${graded.toLocaleString()}</div><div class="label">Graded</div></div>
+        <div class="stat-card"><div class="num">${sports}</div><div class="label">Sports</div></div>
+        <div class="stat-card"><div class="num">${players.toLocaleString()}</div><div class="label">Players</div></div>
+        <div class="stat-card"><div class="num">${yearSpan}</div><div class="label">Year Range</div></div>
+    `;
+}
+
+function buildTableHead() {
+    const tr = document.getElementById('table-head');
+    tr.innerHTML = columns.map(col =>
+        `<th data-col="${col.key}" style="width:${col.width}">${col.label}<span class="sort-arrow">${sortCol===col.key?(sortDir===1?'&#9650;':'&#9660;'):''}</span></th>`
+    ).join('');
+}
+
+function applyFilters() {
+    const search = document.getElementById('search').value.toLowerCase();
+    const sport = document.getElementById('filter-sport').value;
+    const decade = document.getElementById('filter-decade').value;
+    const graded = document.getElementById('filter-graded').value;
+    const series = document.getElementById('filter-series').value;
+
+    filtered = ALL_CARDS.filter(c => {
+        if (sport && c.classification !== sport) return false;
+        if (decade && Math.floor(c._year/10)*10 !== parseInt(decade)) return false;
+        if (graded === 'graded' && (!c.grader || c.grader === '')) return false;
+        if (graded === 'raw' && c.grader && c.grader !== '') return false;
+        if (series && c.series !== series) return false;
+        if (search) {
+            const hay = (c.player_name + ' ' + c.team_name + ' ' + c.series + ' ' + c.card_name).toLowerCase();
+            if (!hay.includes(search)) return false;
+        }
+        return true;
+    });
+
+    filtered.sort((a, b) => {
+        let av = a[sortCol], bv = b[sortCol];
+        if (sortCol === 'price') { av = a._price; bv = b._price; }
+        else if (sortCol === 'year') { av = a._year; bv = b._year; }
+        if (av < bv) return -1 * sortDir;
+        if (av > bv) return 1 * sortDir;
+        return 0;
+    });
+
+    currentPage = 1;
+    renderTable();
+}
+
+function renderTable() {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    const page = filtered.slice(start, start + PAGE_SIZE);
+    const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+    const filteredVal = filtered.reduce((s, c) => s + c._price, 0);
+
+    document.getElementById('results-count').textContent = `Showing ${start+1}-${Math.min(start+PAGE_SIZE, filtered.length)} of ${filtered.length.toLocaleString()} cards`;
+    document.getElementById('results-value').textContent = `Filtered value: $${filteredVal.toLocaleString(undefined,{maximumFractionDigits:0})}`;
+
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = page.map(c => `<tr>
+        <td><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span></td>
+        <td>${c.year}</td>
+        <td>${c.player_name}</td>
+        <td>${c.team_name}</td>
+        <td>${c.series}</td>
+        <td>${c.set}</td>
+        <td>${c.card_number}</td>
+        <td>${c.parallel || '-'}</td>
+        <td>${c.grader ? '<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>' : '-'}</td>
+        <td class="price">${c._price ? '$'+c._price.toFixed(2) : '-'}</td>
+    </tr>`).join('');
+
+    const pag = document.getElementById('pagination');
+    pag.innerHTML = `
+        <button ${currentPage<=1?'disabled':''} onclick="changePage(-1)">Prev</button>
+        <span>Page ${currentPage} of ${totalPages||1}</span>
+        <button ${currentPage>=totalPages?'disabled':''} onclick="changePage(1)">Next</button>
+    `;
+}
+
+function changePage(dir) { currentPage += dir; renderTable(); }
+
+function setupListeners() {
+    let debounce;
+    document.getElementById('search').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
+    ['filter-sport','filter-decade','filter-graded','filter-series'].forEach(id => {
+        document.getElementById(id).addEventListener('change', applyFilters);
+    });
+
+    document.getElementById('table-head').addEventListener('click', e => {
+        const th = e.target.closest('th');
+        if (!th) return;
+        const col = th.dataset.col;
+        if (sortCol === col) sortDir *= -1;
+        else { sortCol = col; sortDir = col === 'price' || col === 'year' ? -1 : 1; }
+        buildTableHead();
+        applyFilters();
+    });
+
+    document.getElementById('tab-bar').addEventListener('click', e => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const view = btn.dataset.view;
+        document.getElementById('table-view').style.display = view==='table'?'':'none';
+        document.getElementById('charts-view').style.display = view==='charts'?'':'none';
+        document.getElementById('highlights-view').style.display = view==='highlights'?'':'none';
+        document.getElementById('controls').style.display = view==='table'?'':'none';
+        if (view === 'charts') renderCharts();
+        if (view === 'highlights') renderHighlights();
+    });
+}
+
+function renderCharts() {
+    const grid = document.getElementById('chart-grid');
+    // By sport
+    const bySport = Object.entries(ALL_CARDS.reduce((a,c)=>{a[c.classification]=(a[c.classification]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
+    const maxSport = bySport[0][1];
+    const sportColors = {baseball:'var(--baseball)',basketball:'var(--basketball)',football:'var(--football)',soccer:'var(--soccer)',hockey:'var(--hockey)'};
+
+    // By decade
+    const byDecade = Object.entries(ALL_CARDS.reduce((a,c)=>{const d=Math.floor(c._year/10)*10+'s';a[d]=(a[d]||0)+1;return a;},{})).sort((a,b)=>a[0].localeCompare(b[0]));
+    const maxDec = Math.max(...byDecade.map(x=>x[1]));
+
+    // Top players by value
+    const playerVal = {};
+    ALL_CARDS.forEach(c => { playerVal[c.player_name] = (playerVal[c.player_name]||0) + c._price; });
+    const topPlayers = Object.entries(playerVal).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxPV = topPlayers[0][1];
+
+    // Top series by count
+    const seriesCount = {};
+    ALL_CARDS.forEach(c => { seriesCount[c.series] = (seriesCount[c.series]||0) + 1; });
+    const topSeries = Object.entries(seriesCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    const maxSC = topSeries[0][1];
+
+    // Value by sport
+    const sportVal = {};
+    ALL_CARDS.forEach(c => { sportVal[c.classification] = (sportVal[c.classification]||0) + c._price; });
+    const bySportVal = Object.entries(sportVal).sort((a,b)=>b[1]-a[1]);
+    const maxSV = bySportVal[0][1];
+
+    grid.innerHTML = `
+        <div class="chart-card"><h3>Cards by Sport</h3><div class="bar-chart">${bySport.map(([k,v])=>`
+            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSport*100}%;background:${sportColors[k]||'var(--other)'}">${v.toLocaleString()}</div></div></div>`).join('')}
+        </div></div>
+        <div class="chart-card"><h3>Cards by Decade</h3><div class="bar-chart">${byDecade.map(([k,v])=>`
+            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxDec*100}%;background:var(--accent2)">${v.toLocaleString()}</div></div></div>`).join('')}
+        </div></div>
+        <div class="chart-card"><h3>Top Players by Value</h3><div class="bar-chart">${topPlayers.map(([k,v])=>`
+            <div class="bar-row"><div class="bar-label" title="${k}">${k.length>14?k.slice(0,14)+'...':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxPV*100}%;background:var(--accent)">$${v.toFixed(0)}</div></div></div>`).join('')}
+        </div></div>
+        <div class="chart-card"><h3>Value by Sport</h3><div class="bar-chart">${bySportVal.map(([k,v])=>`
+            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSV*100}%;background:${sportColors[k]||'var(--other)'}">$${v.toFixed(0)}</div></div></div>`).join('')}
+        </div></div>
+        <div class="chart-card"><h3>Largest Series (by count)</h3><div class="bar-chart">${topSeries.map(([k,v])=>`
+            <div class="bar-row"><div class="bar-label" title="${k}">${k.length>14?k.slice(0,14)+'...':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSC*100}%;background:var(--accent2)">${v.toLocaleString()}</div></div></div>`).join('')}
+        </div></div>
+    `;
+}
+
+function renderHighlights() {
+    const grid = document.getElementById('highlight-grid');
+    const top50 = [...ALL_CARDS].sort((a,b) => b._price - a._price).slice(0, 50);
+    grid.innerHTML = top50.map((c, i) => `
+        <div class="highlight-card">
+            <div style="display:flex;justify-content:space-between;align-items:start;">
+                <div>
+                    <span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span>
+                    <span style="color:var(--text-dim);font-size:0.8rem;margin-left:6px;">#${i+1}</span>
+                </div>
+                ${c.grader?'<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>':''}
+            </div>
+            <div class="player" style="margin-top:0.5rem;">${c.player_name}</div>
+            <div class="details">${c.year} ${c.series} ${c.parallel?'- '+c.parallel:''}</div>
+            <div class="details">${c.team_name} - #${c.card_number}</div>
+            <div class="card-price">$${c._price.toFixed(2)}</div>
+        </div>
+    `).join('');
+}
+
+init();
+</script>
+</body>
+</html>
