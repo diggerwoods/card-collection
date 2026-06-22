@@ -49,10 +49,10 @@
         th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
         td { padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); white-space: nowrap; }
         tr:hover td { background: var(--surface2); }
-        .sport-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #fff; }
-        .sport-baseball { background: var(--baseball); } .sport-basketball { background: var(--basketball); }
-        .sport-football { background: var(--football); } .sport-soccer { background: var(--soccer); }
-        .sport-hockey { background: var(--hockey); } .sport-other { background: var(--other); }
+        .sport-badge { display: inline-block; font-size: 1rem; line-height: 1; vertical-align: middle; }
+        .sport-baseball { } .sport-basketball { }
+        .sport-football { } .sport-soccer { }
+        .sport-hockey { } .sport-other { }
         .graded-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: var(--accent); color: var(--bg); }
         .price { color: var(--accent2); font-weight: 600; }
         .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.2rem; }
@@ -248,6 +248,8 @@ const columns = [
 ];
 
 const SPORT_COLORS = { baseball: '#c0392b', basketball: '#e67e22', football: '#27ae60', soccer: '#2980b9', hockey: '#8e44ad', wrestling: '#e91e63', racing: '#ff5722', magic: '#9c27b0' };
+const SPORT_EMOJI = { baseball: '&#9918;', basketball: '&#127936;', football: '&#127944;', soccer: '&#9917;', hockey: '&#127954;', wrestling: '&#129340;', racing: '&#127937;', magic: '&#127183;' };
+function sportBadge(classification) { return '<span class="sport-badge" title="'+classification+'">'+(SPORT_EMOJI[classification]||'&#127183;')+'</span>'; }
 
 async function init() {
     try {
@@ -381,7 +383,7 @@ function renderTable() {
     document.getElementById('results-count').textContent = `Showing ${start+1}-${Math.min(start+PAGE_SIZE, filtered.length)} of ${filtered.length.toLocaleString()} cards`;
     document.getElementById('results-value').textContent = `Filtered value: $${filteredVal.toLocaleString(undefined,{maximumFractionDigits:0})}`;
     document.getElementById('table-body').innerHTML = page.map((c, idx) => `<tr style="cursor:pointer;" onclick="openCardModal(filtered[${start + idx}])">
-        <td><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span></td>
+        <td>${sportBadge(c.classification)}</td>
         <td>${c.year}</td><td>${c.player_name}</td><td>${c.team_name}</td><td>${c.series}</td><td>${c.set_name||c.set||''}</td><td>${c.card_number}</td>
         <td>${c.parallel||'-'}</td>
         <td>${c.grader?'<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>':'-'}</td>
@@ -486,7 +488,7 @@ function renderHighlights() {
     grid.innerHTML = top50.map((c, i) => `
         <div class="highlight-card">
             <div style="display:flex;justify-content:space-between;align-items:start;">
-                <div><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span>
+                <div>${sportBadge(c.classification)}
                 <span style="color:var(--text-dim);font-size:0.8rem;margin-left:6px;">#${i+1}</span></div>
                 ${c.grader?'<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>':''}
             </div>
@@ -624,7 +626,7 @@ function renderSets() {
                     <div class="set-header">
                         <div>
                             <div class="set-title">${s.series}</div>
-                            <div class="set-meta"><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(s.sport)?s.sport:'other'}">${s.sport}</span> ${s.year} - ${s.owned} of ${s.estSize} cards</div>
+                            <div class="set-meta">${sportBadge(s.sport)} ${s.year} - ${s.owned} of ${s.estSize} cards</div>
                         </div>
                         <div class="progress-ring">
                             <svg width="56" height="56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="4"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/></svg>
@@ -786,7 +788,7 @@ function renderPCPlayers() {
             <div class="pc-player-header">
                 <div>
                     <div class="pc-player-name">${player}</div>
-                    <div class="pc-player-stats">${cards.length} cards - ${yearRange} - ${sports.map(s=>'<span class="sport-badge sport-'+(s||'other')+'">'+s+'</span>').join(' ')} ${graded?'- '+graded+' graded':''}</div>
+                    <div class="pc-player-stats">${cards.length} cards - ${yearRange} - ${sports.map(s=>sportBadge(s)).join(' ')} ${graded?'- '+graded+' graded':''}</div>
                 </div>
                 <div style="font-size:1.2rem;font-weight:700;color:var(--accent2);">$${totalVal.toFixed(2)}</div>
             </div>
@@ -1048,7 +1050,7 @@ function renderInsurance() {
             <h3>Breakdown by Sport</h3>
             <table class="insurance-table"><thead><tr><th>Sport</th><th>Cards</th><th>Graded</th><th>Value</th><th>Avg/Card</th><th>Most Valuable</th></tr></thead>
             <tbody>${Object.entries(bySport).sort((a,b)=>b[1].value-a[1].value).map(([sport,d])=>`<tr>
-                <td><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(sport)?sport:'other'}">${sport}</span></td>
+                <td>${sportBadge(sport)}</td>
                 <td>${d.count.toLocaleString()}</td><td>${d.graded}</td>
                 <td class="price">$${d.value.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
                 <td>$${(d.value/d.count).toFixed(2)}</td>
@@ -1112,7 +1114,7 @@ function openCardModal(card) {
             <div class="detail-item"><div class="dlabel">Team</div><div class="dval">${card.team_name||'-'}</div></div>
         </div>
         <div class="detail-row" style="margin-top:0.8rem;">
-            <div class="detail-item"><div class="dlabel">Sport</div><div class="dval"><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(card.classification)?card.classification:'other'}">${card.classification}</span></div></div>
+            <div class="detail-item"><div class="dlabel">Sport</div><div class="dval">${sportBadge(card.classification)} ${card.classification}</div></div>
             <div class="detail-item"><div class="dlabel">Parallel</div><div class="dval">${card.parallel||'Base'}</div></div>
             <div class="detail-item"><div class="dlabel">Grade</div><div class="dval">${card.grader?card.grader+(card.grade_value?' '+card.grade_value:''):'Ungraded'}</div></div>
             <div class="detail-item"><div class="dlabel">Value</div><div class="dval price">${card._price?'$'+card._price.toFixed(2):'-'}</div></div>
