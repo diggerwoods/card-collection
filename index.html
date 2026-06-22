@@ -4,252 +4,192 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Card Collection Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0f1419;
-            --surface: #1a2332;
-            --surface2: #243447;
-            --accent: #e6a817;
-            --accent2: #4ecdc4;
-            --text: #e8eaed;
-            --text-dim: #8899a6;
-            --border: #2f3f4f;
-            --baseball: #c0392b;
-            --basketball: #e67e22;
-            --football: #27ae60;
-            --soccer: #2980b9;
-            --hockey: #8e44ad;
-            --other: #7f8c8d;
+            --bg: #0f1419; --surface: #1a2332; --surface2: #243447;
+            --accent: #e6a817; --accent2: #4ecdc4; --text: #e8eaed;
+            --text-dim: #8899a6; --border: #2f3f4f;
+            --baseball: #c0392b; --basketball: #e67e22; --football: #27ae60;
+            --soccer: #2980b9; --hockey: #8e44ad; --other: #7f8c8d;
+            --success: #2ecc71; --warning: #f39c12; --danger: #e74c3c;
         }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-        .header {
-            background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%);
-            border-bottom: 2px solid var(--accent);
-            padding: 2rem;
-            text-align: center;
-        }
-        .header h1 {
-            font-size: 2.4rem;
-            font-weight: 700;
-            color: var(--accent);
-            letter-spacing: -0.5px;
-        }
-        .header p { color: var(--text-dim); margin-top: 0.4rem; font-size: 1rem; }
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-            padding: 1.5rem 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-        }
-        .stat-card {
-            text-align: center;
-            padding: 0.8rem;
-            border-radius: 8px;
-            background: var(--surface2);
-        }
-        .stat-card .num {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-        .stat-card .label { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.8rem;
-            padding: 1.2rem 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            align-items: center;
-        }
-        .controls input, .controls select {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 0.6rem 1rem;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+        body::before { content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1; opacity: 0.03; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Ccircle cx='50' cy='50' r='40' stroke='%23e6a817' fill='none' stroke-width='2'/%3E%3Cpath d='M150 10 L190 90 L110 90Z' stroke='%234ecdc4' fill='none' stroke-width='2'/%3E%3Crect x='220' y='20' width='60' height='60' stroke='%23c0392b' fill='none' stroke-width='2' rx='5'/%3E%3Cpath d='M30 180 Q75 130 120 180 T210 180' stroke='%232980b9' fill='none' stroke-width='2'/%3E%3Ccircle cx='250' cy='170' r='30' stroke='%23e67e22' fill='none' stroke-width='2'/%3E%3Cpath d='M50 250 L90 210 L90 290Z' stroke='%2327ae60' fill='none' stroke-width='2'/%3E%3Crect x='140' y='220' width='50' height='70' stroke='%238e44ad' fill='none' stroke-width='2' rx='8'/%3E%3Cpath d='M240 240 L280 260 L240 280 L260 240 L260 280Z' stroke='%23e6a817' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); }
+        .header { background: linear-gradient(135deg, var(--surface) 0%, var(--surface2) 100%); border-bottom: 2px solid var(--accent); padding: 2rem 2rem 2.5rem; text-align: center; position: relative; overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(ellipse at 20% 50%, rgba(230,168,23,0.05) 0%, transparent 50%), radial-gradient(ellipse at 80% 50%, rgba(78,205,196,0.05) 0%, transparent 50%); pointer-events: none; }
+        .header h1 { font-size: 2.4rem; font-weight: 700; color: var(--accent); position: relative; z-index: 2; }
+        .header p { color: var(--text-dim); margin-top: 0.4rem; position: relative; z-index: 2; }
+        .header-cards { display: flex; justify-content: center; align-items: center; margin-top: 1.2rem; position: relative; z-index: 2; height: 120px; }
+        .header-card { width: 80px; height: 112px; border-radius: 6px; border: 2px solid var(--border); position: absolute; transition: transform 0.3s, box-shadow 0.3s; box-shadow: 0 4px 12px rgba(0,0,0,0.4); background: var(--surface2); overflow: hidden; }
+        .header-card:hover { transform: translateY(-8px) scale(1.05) !important; box-shadow: 0 8px 24px rgba(230,168,23,0.3); z-index: 10 !important; }
+        .header-card img { width: 100%; height: 100%; object-fit: cover; }
+        .header-card .placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; color: var(--text-dim); text-align: center; padding: 0.3rem; font-weight: 600; text-transform: uppercase; }
+        .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; padding: 1.5rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border); }
+        .stat-card { text-align: center; padding: 0.8rem; border-radius: 8px; background: var(--surface2); }
+        .stat-card .num { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+        .stat-card .label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+        .tab-bar { display: flex; padding: 0 2rem; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+        .tab-bar button { background: none; border: none; color: var(--text-dim); padding: 0.8rem 1.4rem; font-size: 0.9rem; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; }
+        .tab-bar button:hover { color: var(--text); }
+        .tab-bar button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+        .controls { display: flex; flex-wrap: wrap; gap: 0.8rem; padding: 1.2rem 2rem; background: var(--surface); border-bottom: 1px solid var(--border); align-items: center; }
+        .controls input, .controls select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; outline: none; }
         .controls input:focus, .controls select:focus { border-color: var(--accent); }
         .controls input[type="text"] { flex: 1; min-width: 200px; }
         .controls select { min-width: 130px; }
-        .tab-bar {
-            display: flex;
-            gap: 0;
-            padding: 0 2rem;
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            overflow-x: auto;
-        }
-        .tab-bar button {
-            background: none;
-            border: none;
-            color: var(--text-dim);
-            padding: 0.8rem 1.4rem;
-            font-size: 0.9rem;
-            cursor: pointer;
-            border-bottom: 3px solid transparent;
-            white-space: nowrap;
-            transition: all 0.2s;
-        }
-        .tab-bar button:hover { color: var(--text); }
-        .tab-bar button.active {
-            color: var(--accent);
-            border-bottom-color: var(--accent);
-            font-weight: 600;
-        }
         .content { padding: 1.5rem 2rem; }
-        .results-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            color: var(--text-dim);
-            font-size: 0.85rem;
-        }
         .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
         table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         thead { background: var(--surface2); position: sticky; top: 0; z-index: 2; }
-        th {
-            padding: 0.7rem 0.8rem;
-            text-align: left;
-            color: var(--accent);
-            font-weight: 600;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
+        th { padding: 0.7rem 0.8rem; text-align: left; color: var(--accent); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
         th:hover { color: var(--accent2); }
         th .sort-arrow { margin-left: 4px; font-size: 0.7rem; }
         td { padding: 0.6rem 0.8rem; border-top: 1px solid var(--border); white-space: nowrap; }
         tr:hover td { background: var(--surface2); }
-        .sport-badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #fff;
-        }
-        .sport-baseball { background: var(--baseball); }
-        .sport-basketball { background: var(--basketball); }
-        .sport-football { background: var(--football); }
-        .sport-soccer { background: var(--soccer); }
-        .sport-hockey { background: var(--hockey); }
-        .sport-other { background: var(--other); }
-        .graded-badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            background: var(--accent);
-            color: var(--bg);
-        }
+        .sport-badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #fff; }
+        .sport-baseball { background: var(--baseball); } .sport-basketball { background: var(--basketball); }
+        .sport-football { background: var(--football); } .sport-soccer { background: var(--soccer); }
+        .sport-hockey { background: var(--hockey); } .sport-other { background: var(--other); }
+        .graded-badge { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: var(--accent); color: var(--bg); }
         .price { color: var(--accent2); font-weight: 600; }
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 1.2rem;
-        }
-        .pagination button {
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin-top: 1.2rem; }
+        .pagination button { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; }
         .pagination button:hover { border-color: var(--accent); color: var(--accent); }
         .pagination button:disabled { opacity: 0.4; cursor: default; }
         .pagination span { color: var(--text-dim); font-size: 0.85rem; }
-        #charts-view { display: none; }
-        .chart-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 1.5rem;
-        }
-        .chart-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.2rem;
-        }
+        .results-info { display: flex; justify-content: space-between; margin-bottom: 1rem; color: var(--text-dim); font-size: 0.85rem; }
+        .view-panel { display: none; }
+        .view-panel.active { display: block; }
+        .chart-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 1.5rem; }
+        .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; }
         .chart-card h3 { color: var(--accent); margin-bottom: 1rem; font-size: 1rem; }
-        .bar-chart { display: flex; flex-direction: column; gap: 0.4rem; }
-        .bar-row { display: flex; align-items: center; gap: 0.5rem; }
-        .bar-label { width: 100px; font-size: 0.8rem; color: var(--text-dim); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .bar-track { flex: 1; height: 20px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 6px; font-size: 0.7rem; font-weight: 600; color: #fff; min-width: 30px; }
-        .bar-value { width: 50px; font-size: 0.8rem; color: var(--text-dim); text-align: right; }
-        #highlights-view { display: none; }
-        .highlight-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 1rem;
-        }
-        .highlight-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 1.2rem;
-            transition: border-color 0.2s;
-        }
+        .chart-card canvas { max-height: 300px; }
+        .highlight-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+        .highlight-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; transition: border-color 0.2s; }
         .highlight-card:hover { border-color: var(--accent); }
-        .highlight-card .player { font-size: 1.1rem; font-weight: 600; color: var(--text); }
+        .highlight-card .player { font-size: 1.1rem; font-weight: 600; }
         .highlight-card .details { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
         .highlight-card .card-price { font-size: 1.3rem; color: var(--accent); font-weight: 700; margin-top: 0.5rem; }
-        .loading {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 4rem;
-            color: var(--text-dim);
-        }
-        .spinner {
-            width: 40px; height: 40px;
-            border: 3px solid var(--border);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 1rem;
-        }
+        /* Set Completion Styles */
+        .sets-controls { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.5rem; align-items: center; }
+        .sets-controls input, .sets-controls select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; outline: none; }
+        .sets-controls input:focus, .sets-controls select:focus { border-color: var(--accent); }
+        .sets-controls input { flex: 1; min-width: 200px; }
+        .sets-controls select { min-width: 140px; }
+        .set-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1rem; }
+        .set-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; cursor: pointer; transition: all 0.2s; }
+        .set-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .set-card.expanded { grid-column: 1 / -1; }
+        .set-header { display: flex; justify-content: space-between; align-items: center; }
+        .set-title { font-weight: 600; font-size: 0.95rem; }
+        .set-meta { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.3rem; }
+        .progress-ring { position: relative; width: 56px; height: 56px; flex-shrink: 0; }
+        .progress-ring svg { transform: rotate(-90deg); }
+        .progress-ring .pct { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.7rem; font-weight: 700; color: var(--text); }
+        .progress-bar-wrap { margin-top: 0.8rem; }
+        .progress-bar-bg { height: 6px; background: var(--surface2); border-radius: 3px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .missing-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); max-height: 300px; overflow-y: auto; }
+        .missing-list h4 { color: var(--accent2); font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .missing-item { font-size: 0.8rem; color: var(--text-dim); padding: 0.2rem 0; border-bottom: 1px solid var(--border); }
+        .missing-item:last-child { border-bottom: none; }
+        .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem; color: var(--text-dim); }
+        /* Card Detail Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; padding: 2rem; }
+        .modal-overlay.active { display: flex; }
+        .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative; }
+        .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--text-dim); font-size: 1.5rem; cursor: pointer; }
+        .modal-close:hover { color: var(--text); }
+        .modal-images { display: flex; gap: 1rem; margin-bottom: 1.5rem; justify-content: center; flex-wrap: wrap; }
+        .modal-images img { max-height: 350px; border-radius: 8px; border: 1px solid var(--border); object-fit: contain; }
+        .modal-info h2 { color: var(--accent); margin-bottom: 0.5rem; }
+        .modal-info .detail-row { display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .modal-info .detail-item { font-size: 0.85rem; }
+        .modal-info .detail-item .dlabel { color: var(--text-dim); font-size: 0.75rem; text-transform: uppercase; }
+        .modal-info .detail-item .dval { color: var(--text); font-weight: 500; }
+        .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 1rem; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        @media (max-width: 768px) {
-            .header h1 { font-size: 1.6rem; }
-            .stats-bar { grid-template-columns: repeat(2, 1fr); padding: 1rem; }
-            .controls { padding: 1rem; }
-            .content { padding: 1rem; }
-            .tab-bar { padding: 0 1rem; }
-        }
+        /* Random Card of the Day */
+        .card-of-day { background: var(--surface); border: 1px solid var(--accent); border-radius: 8px; margin: 1.5rem 2rem 0; padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
+        .card-of-day .cod-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent); font-weight: 600; }
+        .card-of-day .cod-player { font-size: 1.2rem; font-weight: 700; }
+        .card-of-day .cod-details { font-size: 0.85rem; color: var(--text-dim); }
+        .card-of-day .cod-value { font-size: 1.1rem; color: var(--accent2); font-weight: 700; margin-left: auto; }
+        .card-of-day .cod-btn { background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim); padding: 0.4rem 0.8rem; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+        .card-of-day .cod-btn:hover { border-color: var(--accent); color: var(--accent); }
+        /* Player PC */
+        .pc-search-bar { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center; }
+        .pc-search-bar input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; outline: none; flex: 1; min-width: 200px; }
+        .pc-search-bar input:focus { border-color: var(--accent); }
+        .pc-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+        .pc-tag { background: var(--surface2); border: 1px solid var(--accent); color: var(--accent); padding: 0.4rem 0.8rem; border-radius: 16px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; }
+        .pc-tag:hover { background: var(--accent); color: var(--bg); }
+        .pc-tag .remove { font-weight: 700; }
+        .pc-player-section { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-bottom: 1rem; }
+        .pc-player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+        .pc-player-name { font-size: 1.2rem; font-weight: 700; color: var(--accent); }
+        .pc-player-stats { font-size: 0.85rem; color: var(--text-dim); }
+        .pc-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0.5rem; }
+        .pc-card-item { background: var(--surface2); border-radius: 4px; padding: 0.5rem 0.8rem; font-size: 0.8rem; display: flex; justify-content: space-between; }
+        /* Heatmap */
+        .heatmap-wrap { overflow-x: auto; }
+        .heatmap-table { border-collapse: collapse; width: 100%; }
+        .heatmap-table th { padding: 0.5rem; font-size: 0.75rem; color: var(--text-dim); text-align: center; white-space: nowrap; }
+        .heatmap-table td { padding: 0.3rem; text-align: center; }
+        .heatmap-cell { border-radius: 4px; padding: 0.5rem; font-size: 0.75rem; font-weight: 600; min-width: 60px; display: inline-block; }
+        .heatmap-legend { display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.8rem; color: var(--text-dim); }
+        .heatmap-legend-bar { width: 200px; height: 12px; border-radius: 3px; background: linear-gradient(to right, #1a2332, #2c5f3f, #4ecdc4, #e6a817, #c0392b); }
+        /* Insurance */
+        .insurance-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+        /* Grading Candidates */
+        .grading-intro { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem; }
+        .grading-intro h2 { color: var(--accent); font-size: 1.2rem; margin-bottom: 0.5rem; }
+        .grading-intro p { color: var(--text-dim); font-size: 0.85rem; line-height: 1.6; }
+        .grading-filters { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-bottom: 1.5rem; align-items: center; }
+        .grading-filters select { background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 0.6rem 1rem; border-radius: 6px; font-size: 0.9rem; outline: none; }
+        .grading-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem; margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; transition: border-color 0.2s; }
+        .grading-card:hover { border-color: var(--accent); }
+        .grading-card .gc-left { flex: 1; min-width: 200px; }
+        .grading-card .gc-player { font-size: 1rem; font-weight: 600; }
+        .grading-card .gc-details { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.2rem; }
+        .grading-card .gc-right { text-align: right; }
+        .grading-card .gc-current { font-size: 0.8rem; color: var(--text-dim); }
+        .grading-card .gc-potential { font-size: 1.1rem; font-weight: 700; color: var(--success); }
+        .grading-card .gc-roi { font-size: 0.8rem; color: var(--accent2); }
+        .grading-card .gc-reason { font-size: 0.75rem; color: var(--accent); background: var(--surface2); padding: 2px 8px; border-radius: 4px; margin-top: 0.3rem; display: inline-block; }
+        .insurance-header h2 { color: var(--accent); font-size: 1.3rem; }
+        .export-btn { background: var(--accent); color: var(--bg); border: none; padding: 0.6rem 1.2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; }
+        .export-btn:hover { background: #d4990f; }
+        .insurance-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--surface); border-radius: 8px; overflow: hidden; }
+        .insurance-table th { background: var(--surface2); padding: 0.7rem; text-align: left; color: var(--accent); font-weight: 600; }
+        .insurance-table td { padding: 0.6rem 0.7rem; border-top: 1px solid var(--border); }
+        .insurance-table tr:hover td { background: var(--surface2); }
+        .insurance-total { font-weight: 700; color: var(--accent); font-size: 1.1rem; }
+        .insurance-section { margin-bottom: 2rem; }
+        .insurance-section h3 { color: var(--accent2); margin-bottom: 0.8rem; font-size: 1rem; }
+        @media (max-width: 768px) { .header h1 { font-size: 1.6rem; } .stats-bar { grid-template-columns: repeat(2, 1fr); } .content { padding: 1rem; } .chart-grid { grid-template-columns: 1fr; } .card-of-day { flex-direction: column; align-items: start; } }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Card Collection Explorer</h1>
         <p>Interactive collection browser and analytics</p>
+        <div class="header-cards" id="header-cards"></div>
     </div>
     <div class="stats-bar" id="stats-bar"></div>
+    <div class="card-of-day" id="card-of-day"></div>
     <div class="tab-bar" id="tab-bar">
         <button class="active" data-view="table">Browse</button>
         <button data-view="charts">Analytics</button>
         <button data-view="highlights">Top Cards</button>
+        <button data-view="sets">Set Completion</button>
+        <button data-view="pc">Player PC</button>
+        <button data-view="heatmap">Value Heatmap</button>
+        <button data-view="grading">Grade Candidates</button>
+        <button data-view="insurance">What's It Worth</button>
     </div>
     <div class="controls" id="controls">
         <input type="text" id="search" placeholder="Search player, team, or series...">
@@ -259,30 +199,40 @@
         <select id="filter-series"><option value="">All Series</option></select>
     </div>
     <div class="content">
-        <div id="table-view">
-            <div class="results-info">
-                <span id="results-count"></span>
-                <span id="results-value"></span>
-            </div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr id="table-head"></tr></thead>
-                    <tbody id="table-body"></tbody>
-                </table>
-            </div>
+        <div id="table-view" class="view-panel active">
+            <div class="results-info"><span id="results-count"></span><span id="results-value"></span></div>
+            <div class="table-wrap"><table><thead><tr id="table-head"></tr></thead><tbody id="table-body"></tbody></table></div>
             <div class="pagination" id="pagination"></div>
         </div>
-        <div id="charts-view"><div class="chart-grid" id="chart-grid"></div></div>
-        <div id="highlights-view"><div class="highlight-grid" id="highlight-grid"></div></div>
+        <div id="charts-view" class="view-panel"><div class="chart-grid" id="chart-grid"></div></div>
+        <div id="highlights-view" class="view-panel"><div class="highlight-grid" id="highlight-grid"></div></div>
+        <div id="sets-view" class="view-panel"><div id="sets-content"></div></div>
+        <div id="pc-view" class="view-panel"><div id="pc-content"></div></div>
+        <div id="heatmap-view" class="view-panel"><div id="heatmap-content"></div></div>
+        <div id="grading-view" class="view-panel"><div id="grading-content"></div></div>
+        <div id="insurance-view" class="view-panel"><div id="insurance-content"></div></div>
         <div class="loading" id="loading"><div class="spinner"></div><span>Loading collection...</span></div>
     </div>
+    <div class="modal-overlay" id="card-modal">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+            <div class="modal-images" id="modal-images"></div>
+            <div class="modal-info" id="modal-info"></div>
+        </div>
+    </div>
+<script src="data.js"></script>
 <script>
+const SUPABASE_URL = 'https://fokpdeenvnulmbthyjph.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZva3BkZWVudm51bG1idGh5anBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTE2ODUsImV4cCI6MjA5NzY4NzY4NX0.G1YYPlAy3s4dKcgKvdplrsukZOqXiJZgS_ePI8NeBfg';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let ALL_CARDS = [];
 let filtered = [];
 let currentPage = 1;
 const PAGE_SIZE = 100;
 let sortCol = 'price';
 let sortDir = -1;
+let chartInstances = {};
 
 const columns = [
     { key: 'classification', label: 'Sport', width: '80px' },
@@ -290,26 +240,66 @@ const columns = [
     { key: 'player_name', label: 'Player', width: '200px' },
     { key: 'team_name', label: 'Team', width: '180px' },
     { key: 'series', label: 'Series', width: '180px' },
-    { key: 'set', label: 'Set', width: '120px' },
+    { key: 'set_name', label: 'Set', width: '120px' },
     { key: 'card_number', label: '#', width: '50px' },
     { key: 'parallel', label: 'Parallel', width: '120px' },
     { key: 'grader', label: 'Grade', width: '80px' },
     { key: 'price', label: 'Value', width: '80px' }
 ];
 
+const SPORT_COLORS = { baseball: '#c0392b', basketball: '#e67e22', football: '#27ae60', soccer: '#2980b9', hockey: '#8e44ad', wrestling: '#e91e63', racing: '#ff5722', magic: '#9c27b0' };
+
 async function init() {
     try {
-        const resp = await fetch('cards.json');
-        ALL_CARDS = await resp.json();
-        ALL_CARDS.forEach(c => { c._price = parseFloat(c.price) || 0; c._year = parseInt(c.year) || 0; });
+        // Try Supabase first, fall back to local data.js
+        let loaded = false;
+        if (typeof window.supabase !== 'undefined' && typeof db.from === 'function') {
+            try {
+                let allData = [];
+                let page = 0;
+                const pageSize = 1000;
+                const timeout = ms => new Promise((_, reject) => setTimeout(() => reject('timeout'), ms));
+                while (true) {
+                    const query = db.from('cards')
+                        .select('id,year,classification,series,set_name,card_name,player_name,team_name,card_number,parallel,grader,grade_value,image_url,image_back_url,current_price')
+                        .range(page * pageSize, (page + 1) * pageSize - 1)
+                        .order('id');
+                    const result = await Promise.race([query, timeout(10000)]);
+                    const { data, error } = result;
+                    if (error || !data || data.length === 0) break;
+                    allData = allData.concat(data);
+                    if (data.length < pageSize) break;
+                    page++;
+                    document.querySelector('#loading span').textContent = `Loading... ${allData.length.toLocaleString()} cards`;
+                }
+                if (allData.length > 0) {
+                    ALL_CARDS = allData.map(c => ({
+                        ...c,
+                        set: c.set_name,
+                        _price: parseFloat(c.current_price) || 0,
+                        _year: c.year || 0
+                    }));
+                    loaded = true;
+                }
+            } catch(e) {
+                console.log('Supabase fetch failed, falling back to local data:', e);
+            }
+        }
+        if (!loaded && typeof EMBEDDED_DATA !== 'undefined') {
+            ALL_CARDS = EMBEDDED_DATA;
+            ALL_CARDS.forEach(c => { c._price = parseFloat(c.price) || 0; c._year = parseInt(c.year) || 0; });
+        }
         document.getElementById('loading').style.display = 'none';
         buildFilters();
         buildStats();
         buildTableHead();
         applyFilters();
         setupListeners();
+        renderCardOfDay();
+        renderHeaderCards();
+        loadPC();
     } catch (e) {
-        document.getElementById('loading').innerHTML = '<span style="color:#e74c3c;">Error loading data. Make sure cards.json is in the same folder.</span>';
+        document.getElementById('loading').innerHTML = '<span style="color:#e74c3c;">Error loading data: ' + e.message + '</span>';
     }
 }
 
@@ -317,15 +307,22 @@ function buildFilters() {
     const sports = [...new Set(ALL_CARDS.map(c => c.classification))].sort();
     const sportSel = document.getElementById('filter-sport');
     sports.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s.charAt(0).toUpperCase() + s.slice(1); sportSel.appendChild(o); });
-
     const decades = [...new Set(ALL_CARDS.map(c => Math.floor(c._year / 10) * 10))].sort((a,b) => a-b);
     const decSel = document.getElementById('filter-decade');
     decades.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d + 's'; decSel.appendChild(o); });
+    updateSeriesFilter();
+}
 
-    const topSeries = Object.entries(ALL_CARDS.reduce((acc, c) => { acc[c.series] = (acc[c.series]||0)+1; return acc; }, {}))
-        .sort((a,b) => b[1]-a[1]).slice(0, 50);
+function updateSeriesFilter() {
+    const sport = document.getElementById('filter-sport').value;
     const serSel = document.getElementById('filter-series');
+    const currentVal = serSel.value;
+    serSel.innerHTML = '<option value="">All Series</option>';
+    const subset = sport ? ALL_CARDS.filter(c => c.classification === sport) : ALL_CARDS;
+    const topSeries = Object.entries(subset.reduce((acc, c) => { acc[c.series] = (acc[c.series]||0)+1; return acc; }, {})).sort((a,b) => a[0].localeCompare(b[0]));
     topSeries.forEach(([s]) => { const o = document.createElement('option'); o.value = s; o.textContent = s; serSel.appendChild(o); });
+    // Restore selection if still valid
+    if (topSeries.some(([s]) => s === currentVal)) serSel.value = currentVal;
 }
 
 function buildStats() {
@@ -334,21 +331,18 @@ function buildStats() {
     const graded = ALL_CARDS.filter(c => c.grader && c.grader !== '').length;
     const sports = new Set(ALL_CARDS.map(c => c.classification)).size;
     const players = new Set(ALL_CARDS.map(c => c.player_name)).size;
-    const yearSpan = Math.min(...ALL_CARDS.map(c=>c._year)) + ' - ' + Math.max(...ALL_CARDS.map(c=>c._year));
-
+    const series = new Set(ALL_CARDS.map(c => c.series)).size;
     document.getElementById('stats-bar').innerHTML = `
         <div class="stat-card"><div class="num">${total.toLocaleString()}</div><div class="label">Total Cards</div></div>
         <div class="stat-card"><div class="num">$${totalVal.toLocaleString(undefined,{maximumFractionDigits:0})}</div><div class="label">Est. Value</div></div>
         <div class="stat-card"><div class="num">${graded.toLocaleString()}</div><div class="label">Graded</div></div>
         <div class="stat-card"><div class="num">${sports}</div><div class="label">Sports</div></div>
         <div class="stat-card"><div class="num">${players.toLocaleString()}</div><div class="label">Players</div></div>
-        <div class="stat-card"><div class="num">${yearSpan}</div><div class="label">Year Range</div></div>
-    `;
+        <div class="stat-card"><div class="num">${series}</div><div class="label">Series</div></div>`;
 }
 
 function buildTableHead() {
-    const tr = document.getElementById('table-head');
-    tr.innerHTML = columns.map(col =>
+    document.getElementById('table-head').innerHTML = columns.map(col =>
         `<th data-col="${col.key}" style="width:${col.width}">${col.label}<span class="sort-arrow">${sortCol===col.key?(sortDir===1?'&#9650;':'&#9660;'):''}</span></th>`
     ).join('');
 }
@@ -359,29 +353,22 @@ function applyFilters() {
     const decade = document.getElementById('filter-decade').value;
     const graded = document.getElementById('filter-graded').value;
     const series = document.getElementById('filter-series').value;
-
     filtered = ALL_CARDS.filter(c => {
         if (sport && c.classification !== sport) return false;
         if (decade && Math.floor(c._year/10)*10 !== parseInt(decade)) return false;
         if (graded === 'graded' && (!c.grader || c.grader === '')) return false;
         if (graded === 'raw' && c.grader && c.grader !== '') return false;
         if (series && c.series !== series) return false;
-        if (search) {
-            const hay = (c.player_name + ' ' + c.team_name + ' ' + c.series + ' ' + c.card_name).toLowerCase();
-            if (!hay.includes(search)) return false;
-        }
+        if (search && !(c.player_name+' '+c.team_name+' '+c.series+' '+c.card_name).toLowerCase().includes(search)) return false;
         return true;
     });
-
     filtered.sort((a, b) => {
-        let av = a[sortCol], bv = b[sortCol];
-        if (sortCol === 'price') { av = a._price; bv = b._price; }
-        else if (sortCol === 'year') { av = a._year; bv = b._year; }
+        let av = sortCol==='price'?a._price:sortCol==='year'?a._year:sortCol==='card_number'?(parseInt(a.card_number)||0):a[sortCol]||'';
+        let bv = sortCol==='price'?b._price:sortCol==='year'?b._year:sortCol==='card_number'?(parseInt(b.card_number)||0):b[sortCol]||'';
         if (av < bv) return -1 * sortDir;
         if (av > bv) return 1 * sortDir;
         return 0;
     });
-
     currentPage = 1;
     renderTable();
 }
@@ -391,112 +378,106 @@ function renderTable() {
     const page = filtered.slice(start, start + PAGE_SIZE);
     const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
     const filteredVal = filtered.reduce((s, c) => s + c._price, 0);
-
     document.getElementById('results-count').textContent = `Showing ${start+1}-${Math.min(start+PAGE_SIZE, filtered.length)} of ${filtered.length.toLocaleString()} cards`;
     document.getElementById('results-value').textContent = `Filtered value: $${filteredVal.toLocaleString(undefined,{maximumFractionDigits:0})}`;
-
-    const tbody = document.getElementById('table-body');
-    tbody.innerHTML = page.map(c => `<tr>
+    document.getElementById('table-body').innerHTML = page.map((c, idx) => `<tr style="cursor:pointer;" onclick="openCardModal(filtered[${start + idx}])">
         <td><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span></td>
-        <td>${c.year}</td>
-        <td>${c.player_name}</td>
-        <td>${c.team_name}</td>
-        <td>${c.series}</td>
-        <td>${c.set}</td>
-        <td>${c.card_number}</td>
-        <td>${c.parallel || '-'}</td>
-        <td>${c.grader ? '<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>' : '-'}</td>
-        <td class="price">${c._price ? '$'+c._price.toFixed(2) : '-'}</td>
-    </tr>`).join('');
-
-    const pag = document.getElementById('pagination');
-    pag.innerHTML = `
+        <td>${c.year}</td><td>${c.player_name}</td><td>${c.team_name}</td><td>${c.series}</td><td>${c.set_name||c.set||''}</td><td>${c.card_number}</td>
+        <td>${c.parallel||'-'}</td>
+        <td>${c.grader?'<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>':'-'}</td>
+        <td class="price">${c._price?'$'+c._price.toFixed(2):'-'}</td></tr>`).join('');
+    document.getElementById('pagination').innerHTML = `
         <button ${currentPage<=1?'disabled':''} onclick="changePage(-1)">Prev</button>
         <span>Page ${currentPage} of ${totalPages||1}</span>
-        <button ${currentPage>=totalPages?'disabled':''} onclick="changePage(1)">Next</button>
-    `;
+        <button ${currentPage>=totalPages?'disabled':''} onclick="changePage(1)">Next</button>`;
 }
-
 function changePage(dir) { currentPage += dir; renderTable(); }
 
 function setupListeners() {
     let debounce;
     document.getElementById('search').addEventListener('input', () => { clearTimeout(debounce); debounce = setTimeout(applyFilters, 300); });
-    ['filter-sport','filter-decade','filter-graded','filter-series'].forEach(id => {
-        document.getElementById(id).addEventListener('change', applyFilters);
-    });
-
+    ['filter-sport','filter-decade','filter-graded','filter-series'].forEach(id => document.getElementById(id).addEventListener('change', applyFilters));
+    document.getElementById('filter-sport').addEventListener('change', updateSeriesFilter);
     document.getElementById('table-head').addEventListener('click', e => {
-        const th = e.target.closest('th');
-        if (!th) return;
+        const th = e.target.closest('th'); if (!th) return;
         const col = th.dataset.col;
-        if (sortCol === col) sortDir *= -1;
-        else { sortCol = col; sortDir = col === 'price' || col === 'year' ? -1 : 1; }
-        buildTableHead();
-        applyFilters();
+        if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = (col==='price'||col==='year') ? -1 : 1; }
+        buildTableHead(); applyFilters();
     });
-
     document.getElementById('tab-bar').addEventListener('click', e => {
-        const btn = e.target.closest('button');
-        if (!btn) return;
+        const btn = e.target.closest('button'); if (!btn) return;
         document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const view = btn.dataset.view;
-        document.getElementById('table-view').style.display = view==='table'?'':'none';
-        document.getElementById('charts-view').style.display = view==='charts'?'':'none';
-        document.getElementById('highlights-view').style.display = view==='highlights'?'':'none';
-        document.getElementById('controls').style.display = view==='table'?'':'none';
+        document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(view + '-view').classList.add('active');
+        document.getElementById('controls').style.display = view === 'table' ? 'flex' : 'none';
         if (view === 'charts') renderCharts();
         if (view === 'highlights') renderHighlights();
+        if (view === 'sets') renderSets();
+        if (view === 'pc') renderPC();
+        if (view === 'heatmap') renderHeatmap();
+        if (view === 'grading') renderGrading();
+        if (view === 'insurance') renderInsurance();
     });
 }
 
+function destroyCharts() { Object.values(chartInstances).forEach(c => c.destroy()); chartInstances = {}; }
+
 function renderCharts() {
+    destroyCharts();
     const grid = document.getElementById('chart-grid');
-    // By sport
-    const bySport = Object.entries(ALL_CARDS.reduce((a,c)=>{a[c.classification]=(a[c.classification]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
-    const maxSport = bySport[0][1];
-    const sportColors = {baseball:'var(--baseball)',basketball:'var(--basketball)',football:'var(--football)',soccer:'var(--soccer)',hockey:'var(--hockey)'};
-
-    // By decade
-    const byDecade = Object.entries(ALL_CARDS.reduce((a,c)=>{const d=Math.floor(c._year/10)*10+'s';a[d]=(a[d]||0)+1;return a;},{})).sort((a,b)=>a[0].localeCompare(b[0]));
-    const maxDec = Math.max(...byDecade.map(x=>x[1]));
-
-    // Top players by value
-    const playerVal = {};
-    ALL_CARDS.forEach(c => { playerVal[c.player_name] = (playerVal[c.player_name]||0) + c._price; });
-    const topPlayers = Object.entries(playerVal).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const maxPV = topPlayers[0][1];
-
-    // Top series by count
-    const seriesCount = {};
-    ALL_CARDS.forEach(c => { seriesCount[c.series] = (seriesCount[c.series]||0) + 1; });
-    const topSeries = Object.entries(seriesCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const maxSC = topSeries[0][1];
-
-    // Value by sport
-    const sportVal = {};
-    ALL_CARDS.forEach(c => { sportVal[c.classification] = (sportVal[c.classification]||0) + c._price; });
-    const bySportVal = Object.entries(sportVal).sort((a,b)=>b[1]-a[1]);
-    const maxSV = bySportVal[0][1];
+    // Aggregate data
+    const bySport = {}; const byDecade = {}; const playerVal = {}; const byYear = {}; const sportVal = {};
+    ALL_CARDS.forEach(c => {
+        bySport[c.classification] = (bySport[c.classification]||0) + 1;
+        const dec = Math.floor(c._year/10)*10 + 's';
+        byDecade[dec] = (byDecade[dec]||0) + 1;
+        playerVal[c.player_name] = (playerVal[c.player_name]||0) + c._price;
+        byYear[c._year] = (byYear[c._year]||0) + 1;
+        sportVal[c.classification] = (sportVal[c.classification]||0) + c._price;
+    });
+    const topPlayers = Object.entries(playerVal).sort((a,b)=>b[1]-a[1]).slice(0,15);
+    const years = Object.keys(byYear).map(Number).sort((a,b)=>a-b);
+    const yearCounts = years.map(y => byYear[y]);
 
     grid.innerHTML = `
-        <div class="chart-card"><h3>Cards by Sport</h3><div class="bar-chart">${bySport.map(([k,v])=>`
-            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSport*100}%;background:${sportColors[k]||'var(--other)'}">${v.toLocaleString()}</div></div></div>`).join('')}
-        </div></div>
-        <div class="chart-card"><h3>Cards by Decade</h3><div class="bar-chart">${byDecade.map(([k,v])=>`
-            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxDec*100}%;background:var(--accent2)">${v.toLocaleString()}</div></div></div>`).join('')}
-        </div></div>
-        <div class="chart-card"><h3>Top Players by Value</h3><div class="bar-chart">${topPlayers.map(([k,v])=>`
-            <div class="bar-row"><div class="bar-label" title="${k}">${k.length>14?k.slice(0,14)+'...':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxPV*100}%;background:var(--accent)">$${v.toFixed(0)}</div></div></div>`).join('')}
-        </div></div>
-        <div class="chart-card"><h3>Value by Sport</h3><div class="bar-chart">${bySportVal.map(([k,v])=>`
-            <div class="bar-row"><div class="bar-label">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSV*100}%;background:${sportColors[k]||'var(--other)'}">$${v.toFixed(0)}</div></div></div>`).join('')}
-        </div></div>
-        <div class="chart-card"><h3>Largest Series (by count)</h3><div class="bar-chart">${topSeries.map(([k,v])=>`
-            <div class="bar-row"><div class="bar-label" title="${k}">${k.length>14?k.slice(0,14)+'...':k}</div><div class="bar-track"><div class="bar-fill" style="width:${v/maxSC*100}%;background:var(--accent2)">${v.toLocaleString()}</div></div></div>`).join('')}
-        </div></div>
-    `;
+        <div class="chart-card"><h3>Collection by Sport</h3><canvas id="ch-sport"></canvas></div>
+        <div class="chart-card"><h3>Value by Sport</h3><canvas id="ch-sport-val"></canvas></div>
+        <div class="chart-card"><h3>Cards by Decade</h3><canvas id="ch-decade"></canvas></div>
+        <div class="chart-card"><h3>Top 15 Players by Value</h3><canvas id="ch-players"></canvas></div>
+        <div class="chart-card" style="grid-column:1/-1;"><h3>Cards by Year (Timeline)</h3><canvas id="ch-timeline"></canvas></div>`;
+
+    const sportLabels = Object.keys(bySport).sort((a,b) => bySport[b]-bySport[a]);
+    const sportData = sportLabels.map(s => bySport[s]);
+    const sportClrs = sportLabels.map(s => SPORT_COLORS[s] || '#7f8c8d');
+
+    chartInstances.sport = new Chart(document.getElementById('ch-sport'), {
+        type: 'doughnut', data: { labels: sportLabels, datasets: [{ data: sportData, backgroundColor: sportClrs, borderColor: '#0f1419', borderWidth: 2 }] },
+        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#e8eaed', padding: 12 } } } }
+    });
+
+    const svLabels = Object.keys(sportVal).sort((a,b) => sportVal[b]-sportVal[a]);
+    chartInstances.sportVal = new Chart(document.getElementById('ch-sport-val'), {
+        type: 'doughnut', data: { labels: svLabels, datasets: [{ data: svLabels.map(s=>sportVal[s]), backgroundColor: svLabels.map(s=>SPORT_COLORS[s]||'#7f8c8d'), borderColor: '#0f1419', borderWidth: 2 }] },
+        options: { responsive: true, plugins: { legend: { position: 'right', labels: { color: '#e8eaed', padding: 12 } }, tooltip: { callbacks: { label: ctx => ctx.label + ': $' + ctx.raw.toLocaleString(undefined,{maximumFractionDigits:0}) } } } }
+    });
+
+    const decLabels = Object.keys(byDecade).sort();
+    chartInstances.decade = new Chart(document.getElementById('ch-decade'), {
+        type: 'bar', data: { labels: decLabels, datasets: [{ label: 'Cards', data: decLabels.map(d=>byDecade[d]), backgroundColor: '#4ecdc4', borderRadius: 4 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8899a6' }, grid: { display: false } }, y: { ticks: { color: '#8899a6' }, grid: { color: '#2f3f4f' } } } }
+    });
+
+    chartInstances.players = new Chart(document.getElementById('ch-players'), {
+        type: 'bar', data: { labels: topPlayers.map(p=>p[0].length>18?p[0].slice(0,18)+'...':p[0]), datasets: [{ label: 'Value ($)', data: topPlayers.map(p=>p[1]), backgroundColor: '#e6a817', borderRadius: 4 }] },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8899a6', callback: v=>'$'+v }, grid: { color: '#2f3f4f' } }, y: { ticks: { color: '#e8eaed' }, grid: { display: false } } } }
+    });
+
+    chartInstances.timeline = new Chart(document.getElementById('ch-timeline'), {
+        type: 'line', data: { labels: years, datasets: [{ label: 'Cards Added', data: yearCounts, borderColor: '#4ecdc4', backgroundColor: 'rgba(78,205,196,0.1)', fill: true, tension: 0.3, pointRadius: 2 }] },
+        options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8899a6', maxTicksLimit: 20 }, grid: { display: false } }, y: { ticks: { color: '#8899a6' }, grid: { color: '#2f3f4f' } } } }
+    });
 }
 
 function renderHighlights() {
@@ -505,19 +486,644 @@ function renderHighlights() {
     grid.innerHTML = top50.map((c, i) => `
         <div class="highlight-card">
             <div style="display:flex;justify-content:space-between;align-items:start;">
-                <div>
-                    <span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span>
-                    <span style="color:var(--text-dim);font-size:0.8rem;margin-left:6px;">#${i+1}</span>
-                </div>
+                <div><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(c.classification)?c.classification:'other'}">${c.classification}</span>
+                <span style="color:var(--text-dim);font-size:0.8rem;margin-left:6px;">#${i+1}</span></div>
                 ${c.grader?'<span class="graded-badge">'+c.grader+(c.grade_value?' '+c.grade_value:'')+'</span>':''}
             </div>
             <div class="player" style="margin-top:0.5rem;">${c.player_name}</div>
             <div class="details">${c.year} ${c.series} ${c.parallel?'- '+c.parallel:''}</div>
             <div class="details">${c.team_name} - #${c.card_number}</div>
             <div class="card-price">$${c._price.toFixed(2)}</div>
-        </div>
-    `).join('');
+        </div>`).join('');
 }
+
+// ========== SET COMPLETION ==========
+// Known base set sizes for major releases
+const KNOWN_SET_SIZES = {
+    '1952 Topps':407,'1962 Topps':598,'1968 Topps':598,'1969 Topps':664,'1973 Topps':660,
+    '1974 Topps':660,'1975 Topps':660,'1976 Topps':660,'1977 Topps':660,'1978 Topps':726,
+    '1979 Topps':726,'1980 Topps':726,'1981 Topps':726,'1981 Donruss':600,'1981 Fleer':660,
+    '1982 Topps':792,'1982 Donruss':660,'1982 Fleer':660,'1983 Topps':792,'1983 Donruss':660,
+    '1983 Fleer':660,'1984 Topps':792,'1984 Fleer':660,'1985 Topps':792,'1985 Donruss':660,
+    '1986 Topps':792,'1986 Donruss':660,'1986 Fleer':660,'1987 Topps':792,'1987 Donruss':660,
+    '1987 Fleer':660,'1988 Topps':792,'1988 Donruss':660,'1988 Fleer':660,'1988 Score':660,
+    '1989 Topps':792,'1989 Donruss':660,'1989 Fleer':660,'1989 Score':660,'1989 Upper Deck':800,
+    '1990 Topps':792,'1990 Donruss':716,'1990 Fleer':660,'1990 Score':704,'1990 Upper Deck':800,
+    '1991 Topps':792,'1991 Donruss':770,'1991 Fleer':720,'1991 Upper Deck':800,'1991 Score':900,
+    '1992 Topps':792,'1992 Donruss':784,'1992 Fleer':720,'1992 Upper Deck':800,'1992 Score':893,
+    '1992 Stadium Club':900,'1992 Ultra':600,'1993 Topps':825,'1993 Fleer':720,'1993 Upper Deck':840,
+    '1990 SkyBox':423,'2004 Fleer Tradition':500,'2004 Ultra':250,'2005 Topps':733,
+    '2005 Topps Turkey Red':350,'2005 Topps Total':990,'2005 Playoff Prestige':200,'2005 Flair':100,
+    '2005 Topps Updates & Highlights':330,'2006 Topps':659,'2006 Topps Turkey Red':530,
+    '2006 Upper Deck':1000,'2006 Ultra':250,'2006 Topps Draft Picks & Prospects':170,
+    '2007 Topps Turkey Red':250,'2008 Topps':660,'2008 Topps Allen & Ginter':350,
+    '2012 Topps':661,'2023 Topps':660,'2023 Panini Haunted Hoops':200,
+    '2025 Topps':350,'2025 Topps Heritage':500,'2025 Topps Holiday':200,
+    '2025 Topps Stadium Club':300,'2025 Topps Update':330,
+    '2025 Donruss Road to FIFA World Cup \'26':200,
+    '2026 Topps':350,'2026 Topps Heritage':500,
+    '2026 Panini Prizm Monopoly FIFA World Cup':100,
+    '1984 Topps|football':396,'1985 Topps|football':396
+};
+
+function getSetData() {
+    const sets = {};
+    ALL_CARDS.forEach(c => {
+        if (c.set_name !== 'Base Set' && c.set !== 'Base Set') return; // Only track Base Set completion
+        const key = c.series;
+        if (!sets[key]) sets[key] = { series: c.series, set: c.set, sport: c.classification, year: c._year, cards: new Map() };
+        const num = c.card_number.replace(/[a-z]$/i, '');
+        if (!sets[key].cards.has(num)) sets[key].cards.set(num, []);
+        sets[key].cards.get(num).push(c);
+    });
+
+    Object.entries(sets).forEach(([key, s]) => {
+        const nums = [...s.cards.keys()].map(n => parseInt(n)).filter(n => !isNaN(n));
+        s.owned = new Set([...s.cards.keys()].filter(n => !isNaN(parseInt(n)))).size;
+        const sportKey = key + '|' + s.sport;
+        const knownSize = KNOWN_SET_SIZES[key] || KNOWN_SET_SIZES[sportKey] || null;
+
+        if (knownSize) {
+            s.estSize = knownSize;
+        } else if (nums.length > 0) {
+            // Fallback: use max card number as estimate
+            s.estSize = Math.max(...nums);
+        } else {
+            s.estSize = s.cards.size;
+        }
+
+        s.pct = Math.min(100, Math.round((s.owned / s.estSize) * 100));
+        s.missing = [];
+        // Calculate missing numbers from 1 to set size
+        if (s.estSize <= 1200) {
+            const ownedNums = new Set(nums);
+            for (let i = 1; i <= s.estSize; i++) {
+                if (!ownedNums.has(i)) s.missing.push(i);
+            }
+        }
+    });
+    return sets;
+}
+
+let setsData = null;
+let setsExpanded = null;
+
+function renderSets() {
+    if (!setsData) setsData = getSetData();
+    const container = document.getElementById('sets-content');
+    let entries = Object.entries(setsData);
+
+    container.innerHTML = `
+        <div class="sets-controls">
+            <input type="text" id="set-search" placeholder="Search sets...">
+            <select id="set-sport-filter"><option value="">All Sports</option>${[...new Set(entries.map(([,s])=>s.sport))].sort().map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}</select>
+            <select id="set-sort">
+                <option value="pct-desc">Most Complete</option>
+                <option value="pct-asc">Least Complete</option>
+                <option value="owned-desc">Most Cards</option>
+                <option value="missing-asc">Fewest Missing</option>
+                <option value="year-desc">Newest First</option>
+            </select>
+            <select id="set-status"><option value="">All Status</option><option value="complete">Complete (100%)</option><option value="near">Near Complete (75%+)</option><option value="partial">In Progress (&lt;75%)</option></select>
+        </div>
+        <div class="set-grid" id="set-grid"></div>`;
+
+    function renderSetGrid() {
+        const search = document.getElementById('set-search').value.toLowerCase();
+        const sport = document.getElementById('set-sport-filter').value;
+        const sort = document.getElementById('set-sort').value;
+        const status = document.getElementById('set-status').value;
+
+        let list = entries.filter(([k, s]) => {
+            if (sport && s.sport !== sport) return false;
+            if (search && !k.toLowerCase().includes(search)) return false;
+            if (status === 'complete' && s.pct < 100) return false;
+            if (status === 'near' && (s.pct < 75 || s.pct >= 100)) return false;
+            if (status === 'partial' && s.pct >= 75) return false;
+            return true;
+        });
+
+        const [field, dir] = sort.split('-');
+        list.sort((a, b) => {
+            let av, bv;
+            if (field === 'pct') { av = a[1].pct; bv = b[1].pct; }
+            else if (field === 'owned') { av = a[1].owned; bv = b[1].owned; }
+            else if (field === 'missing') { av = a[1].missing.length; bv = b[1].missing.length; }
+            else if (field === 'year') { av = a[1].year; bv = b[1].year; }
+            return dir === 'desc' ? bv - av : av - bv;
+        });
+
+        const display = list.slice(0, 100);
+        const grid = document.getElementById('set-grid');
+        grid.innerHTML = `<p style="color:var(--text-dim);font-size:0.85rem;grid-column:1/-1;">Showing ${display.length} of ${list.length} sets</p>` +
+            display.map(([key, s]) => {
+                const color = s.pct >= 100 ? 'var(--success)' : s.pct >= 75 ? 'var(--warning)' : 'var(--danger)';
+                const r = 22, circ = 2 * Math.PI * r, offset = circ - (circ * Math.min(s.pct,100) / 100);
+                const isExpanded = setsExpanded === key;
+                return `<div class="set-card ${isExpanded?'expanded':''}" data-key="${key}">
+                    <div class="set-header">
+                        <div>
+                            <div class="set-title">${s.series}</div>
+                            <div class="set-meta"><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(s.sport)?s.sport:'other'}">${s.sport}</span> ${s.year} - ${s.owned} of ${s.estSize} cards</div>
+                        </div>
+                        <div class="progress-ring">
+                            <svg width="56" height="56"><circle cx="28" cy="28" r="${r}" fill="none" stroke="var(--surface2)" stroke-width="4"/><circle cx="28" cy="28" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"/></svg>
+                            <div class="pct">${s.pct}%</div>
+                        </div>
+                    </div>
+                    <div class="progress-bar-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${s.pct}%;background:${color}"></div></div></div>
+                    <div class="set-meta" style="margin-top:0.5rem;">${s.missing.length > 0 ? s.missing.length + ' cards missing' : 'COMPLETE'}</div>
+                    ${isExpanded && s.missing.length > 0 ? `<div class="missing-list"><h4>Missing Card Numbers (${s.missing.length})</h4>${s.missing.map(n=>`<div class="missing-item">#${n}</div>`).join('')}</div>` : ''}
+                    ${isExpanded && s.missing.length === 0 ? '<div class="missing-list"><h4 style="color:var(--success);">Set Complete!</h4></div>' : ''}
+                </div>`;
+            }).join('');
+
+        grid.querySelectorAll('.set-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const key = card.dataset.key;
+                setsExpanded = setsExpanded === key ? null : key;
+                renderSetGrid();
+            });
+        });
+    }
+
+    renderSetGrid();
+    document.getElementById('set-search').addEventListener('input', () => renderSetGrid());
+    document.getElementById('set-sport-filter').addEventListener('change', renderSetGrid);
+    document.getElementById('set-sort').addEventListener('change', renderSetGrid);
+    document.getElementById('set-status').addEventListener('change', renderSetGrid);
+}
+
+// ========== RANDOM CARD OF THE DAY ==========
+function renderCardOfDay() {
+    const card = ALL_CARDS[Math.floor(Math.random() * ALL_CARDS.length)];
+    const el = document.getElementById('card-of-day');
+    el.innerHTML = `
+        <div><div class="cod-label">Card of the Day</div></div>
+        <div>
+            <div class="cod-player">${card.player_name}</div>
+            <div class="cod-details">${card.year} ${card.series} #${card.card_number} ${card.parallel?'- '+card.parallel:''} ${card.grader?'['+card.grader+(card.grade_value?' '+card.grade_value:'')+']':''}</div>
+            <div class="cod-details">${card.team_name}</div>
+        </div>
+        ${card._price ? '<div class="cod-value">$'+card._price.toFixed(2)+'</div>' : ''}
+        <button class="cod-btn" onclick="renderCardOfDay()">Shuffle</button>`;
+}
+
+// ========== HEADER CARD FAN ==========
+function renderHeaderCards() {
+    const container = document.getElementById('header-cards');
+    // Pick top value cards that have images first, fill rest with top value cards
+    const withImages = ALL_CARDS.filter(c => c.image_url);
+    const topCards = [...withImages.sort((a,b) => b._price - a._price).slice(0, 7)];
+    // If not enough with images, add top value cards
+    if (topCards.length < 7) {
+        const remaining = ALL_CARDS.filter(c => !c.image_url).sort((a,b) => b._price - a._price);
+        topCards.push(...remaining.slice(0, 7 - topCards.length));
+    }
+    const cards = topCards.slice(0, 7);
+    const sportBgs = { baseball: '#8b1a1a', basketball: '#a85316', football: '#1a6b35', soccer: '#1a5276', hockey: '#5b2d7a' };
+
+    container.innerHTML = cards.map((c, i) => {
+        const angle = (i - 3) * 8; // -24 to +24 degrees
+        const offset = (i - 3) * 55; // horizontal spread
+        const yOffset = Math.abs(i - 3) * 6; // arc effect
+        const zIndex = 7 - Math.abs(i - 3);
+        const bg = sportBgs[c.classification] || '#2a3a4a';
+        return `<div class="header-card" style="transform:rotate(${angle}deg) translateX(${offset}px) translateY(${yOffset}px); z-index:${zIndex};" onclick="openCardModal(ALL_CARDS.find(x=>x.id===${c.id}))">
+            ${c.image_url
+                ? `<img src="${c.image_url}" alt="${c.player_name}">`
+                : `<div class="placeholder" style="background:linear-gradient(135deg, ${bg}, var(--surface2));">${c.year}<br>${c.player_name.split(' ').pop()}</div>`
+            }
+        </div>`;
+    }).join('');
+}
+
+// ========== PLAYER PC TRACKER ==========
+let pcPlayers = JSON.parse(localStorage.getItem('cardPC') || '[]');
+
+function savePC() {
+    localStorage.setItem('cardPC', JSON.stringify(pcPlayers));
+    // Also save to Supabase
+    if (typeof db !== 'undefined') {
+        db.from('player_pc').delete().neq('id', 0).then(() => {
+            if (pcPlayers.length > 0) {
+                db.from('player_pc').insert(pcPlayers.map(p => ({ player_name: p }))).then(() => {});
+            }
+        });
+    }
+}
+
+async function loadPC() {
+    if (typeof db !== 'undefined') {
+        const { data } = await db.from('player_pc').select('player_name');
+        if (data && data.length > 0) {
+            pcPlayers = data.map(r => r.player_name);
+            localStorage.setItem('cardPC', JSON.stringify(pcPlayers));
+        }
+    }
+}
+
+function renderPC() {
+    const container = document.getElementById('pc-content');
+    // Build suggestion list - top players from EACH sport
+    const playersBySport = {};
+    ALL_CARDS.forEach(c => {
+        if (!playersBySport[c.classification]) playersBySport[c.classification] = {};
+        playersBySport[c.classification][c.player_name] = (playersBySport[c.classification][c.player_name]||0) + 1;
+    });
+    const topSuggestions = [];
+    Object.entries(playersBySport).forEach(([sport, players]) => {
+        const top = Object.entries(players).sort((a,b)=>b[1]-a[1]).slice(0, 10).map(p=>p[0]);
+        topSuggestions.push(...top);
+    });
+    const uniqueSuggestions = [...new Set(topSuggestions)];
+
+    container.innerHTML = `
+        <div class="pc-search-bar">
+            <input type="text" id="pc-search" placeholder="Add a player to your PC..." list="pc-suggestions">
+            <datalist id="pc-suggestions">${uniqueSuggestions.map(p=>`<option value="${p}">`).join('')}</datalist>
+            <button class="export-btn" onclick="addPCPlayer()">Add Player</button>
+        </div>
+        <div class="pc-tags" id="pc-tags"></div>
+        <div id="pc-players"></div>`;
+
+    document.getElementById('pc-search').addEventListener('keydown', e => { if (e.key === 'Enter') addPCPlayer(); });
+    renderPCTags();
+    renderPCPlayers();
+}
+
+function addPCPlayer() {
+    const input = document.getElementById('pc-search');
+    const name = input.value.trim();
+    if (!name) return;
+    // Find exact or closest match
+    const exact = ALL_CARDS.find(c => c.player_name.toLowerCase() === name.toLowerCase());
+    const matched = exact ? exact.player_name : name;
+    if (!pcPlayers.includes(matched)) { pcPlayers.push(matched); savePC(); }
+    input.value = '';
+    renderPCTags();
+    renderPCPlayers();
+}
+
+function removePCPlayer(name) { pcPlayers = pcPlayers.filter(p => p !== name); savePC(); renderPCTags(); renderPCPlayers(); }
+
+function renderPCTags() {
+    document.getElementById('pc-tags').innerHTML = pcPlayers.length === 0
+        ? '<span style="color:var(--text-dim);font-size:0.85rem;">No players tracked yet. Add players you\'re building around.</span>'
+        : pcPlayers.map(p => `<div class="pc-tag" onclick="removePCPlayer('${p.replace(/'/g,"\\'")}')">${p} <span class="remove">x</span></div>`).join('');
+}
+
+function renderPCPlayers() {
+    const container = document.getElementById('pc-players');
+    if (pcPlayers.length === 0) { container.innerHTML = ''; return; }
+    container.innerHTML = pcPlayers.map(player => {
+        const cards = ALL_CARDS.filter(c => c.player_name === player).sort((a,b) => b._price - a._price);
+        const totalVal = cards.reduce((s,c) => s + c._price, 0);
+        const graded = cards.filter(c => c.grader && c.grader !== '').length;
+        const sports = [...new Set(cards.map(c=>c.classification))];
+        const yearRange = cards.length ? Math.min(...cards.map(c=>c._year)) + '-' + Math.max(...cards.map(c=>c._year)) : '';
+        return `<div class="pc-player-section">
+            <div class="pc-player-header">
+                <div>
+                    <div class="pc-player-name">${player}</div>
+                    <div class="pc-player-stats">${cards.length} cards - ${yearRange} - ${sports.map(s=>'<span class="sport-badge sport-'+(s||'other')+'">'+s+'</span>').join(' ')} ${graded?'- '+graded+' graded':''}</div>
+                </div>
+                <div style="font-size:1.2rem;font-weight:700;color:var(--accent2);">$${totalVal.toFixed(2)}</div>
+            </div>
+            <div class="pc-card-grid">${cards.slice(0,30).map(c => `<div class="pc-card-item">
+                <span>${c.year} ${c.series} #${c.card_number} ${c.parallel?'('+c.parallel+')':''} ${c.grader?'['+c.grader+(c.grade_value?' '+c.grade_value:'')+']':''}</span>
+                <span class="price">${c._price?'$'+c._price.toFixed(2):'-'}</span>
+            </div>`).join('')}
+            ${cards.length > 30 ? '<div style="color:var(--text-dim);font-size:0.8rem;padding:0.5rem;">...and '+(cards.length-30)+' more</div>' : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ========== VALUE HEATMAP ==========
+function renderHeatmap() {
+    const container = document.getElementById('heatmap-content');
+    const sports = [...new Set(ALL_CARDS.map(c => c.classification))].sort();
+    const decades = [...new Set(ALL_CARDS.map(c => Math.floor(c._year/10)*10))].sort((a,b)=>a-b);
+
+    // Build value matrix
+    const matrix = {};
+    ALL_CARDS.forEach(c => {
+        const dec = Math.floor(c._year/10)*10;
+        const key = c.classification + '|' + dec;
+        matrix[key] = (matrix[key]||0) + c._price;
+    });
+
+    // Build count matrix
+    const countMatrix = {};
+    ALL_CARDS.forEach(c => {
+        const dec = Math.floor(c._year/10)*10;
+        const key = c.classification + '|' + dec;
+        countMatrix[key] = (countMatrix[key]||0) + 1;
+    });
+
+    const maxVal = Math.max(...Object.values(matrix), 1);
+
+    function getColor(val) {
+        if (val === 0) return 'var(--surface2)';
+        const pct = val / maxVal;
+        if (pct < 0.05) return '#1a3a2a';
+        if (pct < 0.15) return '#2c5f3f';
+        if (pct < 0.35) return '#3d8b6e';
+        if (pct < 0.55) return '#4ecdc4';
+        if (pct < 0.75) return '#e6a817';
+        return '#c0392b';
+    }
+
+    container.innerHTML = `
+        <h2 style="color:var(--accent);margin-bottom:1rem;">Value Heatmap - Decade x Sport</h2>
+        <p style="color:var(--text-dim);font-size:0.85rem;margin-bottom:1.5rem;">Each cell shows total estimated value. Hover for details.</p>
+        <div class="heatmap-wrap">
+            <table class="heatmap-table">
+                <thead><tr><th></th>${decades.map(d=>`<th>${d}s</th>`).join('')}<th>Total</th></tr></thead>
+                <tbody>${sports.map(sport => {
+                    const sportTotal = decades.reduce((s,d) => s + (matrix[sport+'|'+d]||0), 0);
+                    return `<tr><th style="text-align:right;padding-right:1rem;">${sport}</th>${decades.map(d => {
+                        const val = matrix[sport+'|'+d] || 0;
+                        const count = countMatrix[sport+'|'+d] || 0;
+                        return `<td><div class="heatmap-cell" style="background:${getColor(val)};color:${val>0?'#fff':'var(--text-dim)'}" title="${sport} ${d}s: $${val.toFixed(0)} (${count} cards)">$${val>=1000?(val/1000).toFixed(1)+'k':val.toFixed(0)}</div></td>`;
+                    }).join('')}<td style="font-weight:700;color:var(--accent2);">$${sportTotal>=1000?(sportTotal/1000).toFixed(1)+'k':sportTotal.toFixed(0)}</td></tr>`;
+                }).join('')}
+                <tr style="border-top:2px solid var(--border);"><th style="text-align:right;padding-right:1rem;color:var(--accent);">Total</th>${decades.map(d => {
+                    const colTotal = sports.reduce((s,sp) => s + (matrix[sp+'|'+d]||0), 0);
+                    return `<td style="font-weight:700;color:var(--accent);">$${colTotal>=1000?(colTotal/1000).toFixed(1)+'k':colTotal.toFixed(0)}</td>`;
+                }).join('')}<td class="insurance-total">$${Object.values(matrix).reduce((a,b)=>a+b,0).toLocaleString(undefined,{maximumFractionDigits:0})}</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="heatmap-legend"><span>Low</span><div class="heatmap-legend-bar"></div><span>High</span></div>`;
+}
+
+// ========== GRADING CANDIDATES ==========
+// Known grading multipliers by era/player significance
+const GRADE_MULTIPLIERS = {
+    vintage: { psa9: 8, psa8: 4, psa7: 2.5 },  // Pre-1980
+    junkWax: { psa10: 5, psa9: 2, psa8: 1.3 },  // 1986-1994
+    modern: { psa10: 3, psa9: 1.5, psa8: 1.1 },  // 1995-2015
+    ultra: { psa10: 4, psa9: 2, psa8: 1.2 }       // 2016+
+};
+
+// High-value players whose cards grade particularly well
+const PREMIUM_PLAYERS = new Set([
+    'Nolan Ryan','Cal Ripken','Wade Boggs','Tony Gwynn','Mark McGwire','Ken Griffey Jr.',
+    'Derek Jeter','Mike Trout','Shohei Ohtani','Juan Soto','Ronald Acuna Jr.','Julio Rodriguez',
+    'Michael Jordan','LeBron James','Kobe Bryant','Luka Doncic','Ja Morant','Victor Wembanyama',
+    'John Elway','Tom Brady','Patrick Mahomes','Joe Montana','Dan Marino','Jerry Rice',
+    'Wayne Gretzky','Mario Lemieux','Connor McDavid',
+    'Lionel Messi','Cristiano Ronaldo','Erling Haaland',
+    'Mickey Mantle','Willie Mays','Hank Aaron','Roberto Clemente','Ernie Banks',
+    'Dale Murphy','Rickey Henderson','Roger Clemens','Barry Bonds','Frank Thomas',
+    'Chipper Jones','Greg Maddux','Pedro Martinez','Ichiro Suzuki','Albert Pujols',
+    'Bryce Harper','Fernando Tatis Jr.','Bobby Witt Jr.','Gunnar Henderson','Paul Skenes',
+    'Elly De La Cruz','Jackson Chourio','Wyatt Langford'
+]);
+
+function getEra(year) {
+    if (year < 1980) return 'vintage';
+    if (year <= 1994) return 'junkWax';
+    if (year <= 2015) return 'modern';
+    return 'ultra';
+}
+
+function scoreGradingCandidate(card) {
+    // Skip already graded cards (except RAW which means ungraded in Ludex)
+    if (card.grader && card.grader !== '' && card.grader !== 'RAW') return null;
+
+    const era = getEra(card._year);
+    const mult = GRADE_MULTIPLIERS[era];
+    const isPremium = PREMIUM_PLAYERS.has(card.player_name);
+    const isParallel = card.parallel && card.parallel !== '';
+    const rawVal = card._price;
+
+    // Skip cards with no value or very low value (not worth $20-50 grading fee)
+    if (rawVal < 5) return null;
+
+    // Estimate potential graded value
+    let potentialMult;
+    let expectedGrade;
+    if (era === 'vintage') {
+        potentialMult = isPremium ? mult.psa8 * 1.5 : mult.psa7;
+        expectedGrade = isPremium ? 'PSA 8' : 'PSA 7';
+    } else if (era === 'junkWax') {
+        potentialMult = isPremium ? mult.psa10 : mult.psa9;
+        expectedGrade = isPremium ? 'PSA 10' : 'PSA 9';
+    } else {
+        potentialMult = isPremium ? mult.psa10 * 1.2 : mult.psa10;
+        expectedGrade = 'PSA 10';
+    }
+
+    // Parallels get a bonus
+    if (isParallel) potentialMult *= 1.3;
+
+    const potentialVal = rawVal * potentialMult;
+    const gradingCost = 30; // Approximate PSA/SGC cost
+    const profit = potentialVal - rawVal - gradingCost;
+    const roi = ((potentialVal - rawVal - gradingCost) / (rawVal + gradingCost)) * 100;
+
+    if (profit < 10) return null; // Not worth it
+
+    let reason = '';
+    if (isPremium && era === 'vintage') reason = 'Vintage star - high demand graded';
+    else if (isPremium && era === 'ultra') reason = 'Modern star - PSA 10 premium';
+    else if (isPremium) reason = 'Key player - graded premium';
+    else if (isParallel) reason = 'Parallel - scarce graded pop';
+    else if (era === 'vintage') reason = 'Vintage card - condition premium';
+    else if (rawVal > 20) reason = 'High raw value - ROI potential';
+    else reason = 'Grading upside';
+
+    return { card, rawVal, potentialVal, profit, roi, expectedGrade, reason };
+}
+
+function renderGrading() {
+    const container = document.getElementById('grading-content');
+
+    // Score all candidates
+    const candidates = ALL_CARDS.map(scoreGradingCandidate).filter(Boolean).sort((a,b) => b.profit - a.profit);
+
+    const sports = [...new Set(candidates.map(c => c.card.classification))].sort();
+
+    container.innerHTML = `
+        <div class="grading-intro">
+            <h2>Grading Candidates</h2>
+            <p>Cards from your collection most likely to profit from professional grading. Estimates assume ~$30 grading cost and are based on era, player significance, and typical graded multipliers. Vintage cards (pre-1980) use PSA 7-8 targets. Junk wax and modern use PSA 9-10 targets. Premium players get higher multipliers based on market demand.</p>
+            <p style="margin-top:0.5rem;color:var(--warning);">Note: These are estimates only. Actual graded values depend on condition, centering, and current market.</p>
+        </div>
+        <div class="grading-filters">
+            <select id="grade-sport"><option value="">All Sports</option>${sports.map(s=>`<option value="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</option>`).join('')}</select>
+            <select id="grade-era"><option value="">All Eras</option><option value="vintage">Vintage (Pre-1980)</option><option value="junkWax">Junk Wax (1986-1994)</option><option value="modern">Modern (1995-2015)</option><option value="ultra">Ultra Modern (2016+)</option></select>
+            <select id="grade-sort"><option value="profit">Highest Profit</option><option value="roi">Best ROI %</option><option value="potential">Highest Potential Value</option></select>
+            <span style="color:var(--text-dim);font-size:0.85rem;margin-left:auto;">${candidates.length} candidates found</span>
+        </div>
+        <div id="grading-list"></div>`;
+
+    function renderGradingList() {
+        const sport = document.getElementById('grade-sport').value;
+        const era = document.getElementById('grade-era').value;
+        const sort = document.getElementById('grade-sort').value;
+
+        let list = candidates.filter(c => {
+            if (sport && c.card.classification !== sport) return false;
+            if (era && getEra(c.card._year) !== era) return false;
+            return true;
+        });
+
+        if (sort === 'roi') list.sort((a,b) => b.roi - a.roi);
+        else if (sort === 'potential') list.sort((a,b) => b.potentialVal - a.potentialVal);
+        else list.sort((a,b) => b.profit - a.profit);
+
+        const display = list.slice(0, 75);
+        document.getElementById('grading-list').innerHTML = display.length === 0
+            ? '<p style="color:var(--text-dim);padding:2rem;text-align:center;">No candidates match these filters.</p>'
+            : display.map((g, i) => `<div class="grading-card">
+                <div class="gc-left">
+                    <div class="gc-player"><span style="color:var(--text-dim);font-size:0.8rem;">${i+1}.</span> ${g.card.player_name}</div>
+                    <div class="gc-details">${g.card.year} ${g.card.series} #${g.card.card_number} ${g.card.parallel?'('+g.card.parallel+')':''}</div>
+                    <div class="gc-details">${g.card.team_name}</div>
+                    <span class="gc-reason">${g.reason}</span>
+                </div>
+                <div class="gc-right">
+                    <div class="gc-current">Raw: $${g.rawVal.toFixed(2)}</div>
+                    <div class="gc-potential">${g.expectedGrade}: ~$${g.potentialVal.toFixed(0)}</div>
+                    <div class="gc-roi">Profit: +$${g.profit.toFixed(0)} (${g.roi.toFixed(0)}% ROI)</div>
+                </div>
+            </div>`).join('');
+    }
+
+    renderGradingList();
+    document.getElementById('grade-sport').addEventListener('change', renderGradingList);
+    document.getElementById('grade-era').addEventListener('change', renderGradingList);
+    document.getElementById('grade-sort').addEventListener('change', renderGradingList);
+}
+
+// ========== WHAT'S IT WORTH (INSURANCE) ==========
+function renderInsurance() {
+    const container = document.getElementById('insurance-content');
+    const totalVal = ALL_CARDS.reduce((s,c) => s + c._price, 0);
+
+    // By sport
+    const bySport = {};
+    ALL_CARDS.forEach(c => {
+        if (!bySport[c.classification]) bySport[c.classification] = { count: 0, value: 0, graded: 0, topCard: null };
+        bySport[c.classification].count++;
+        bySport[c.classification].value += c._price;
+        if (c.grader) bySport[c.classification].graded++;
+        if (!bySport[c.classification].topCard || c._price > bySport[c.classification].topCard._price) bySport[c.classification].topCard = c;
+    });
+
+    // By era
+    const byEra = {};
+    ALL_CARDS.forEach(c => {
+        const era = Math.floor(c._year/10)*10 + 's';
+        if (!byEra[era]) byEra[era] = { count: 0, value: 0, graded: 0 };
+        byEra[era].count++;
+        byEra[era].value += c._price;
+        if (c.grader) byEra[era].graded++;
+    });
+
+    // Top 25 most valuable
+    const top25 = [...ALL_CARDS].sort((a,b) => b._price - a._price).slice(0,25);
+
+    const date = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+    container.innerHTML = `
+        <div class="insurance-header">
+            <div>
+                <h2>Collection Valuation Summary</h2>
+                <p style="color:var(--text-dim);font-size:0.85rem;">Generated ${date} - Based on Ludex estimated market values</p>
+            </div>
+            <button class="export-btn" onclick="exportInsurance()">Export as CSV</button>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--accent);border-radius:8px;padding:1.5rem;margin-bottom:2rem;text-align:center;">
+            <div style="font-size:0.8rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:1px;">Total Collection Estimated Value</div>
+            <div style="font-size:2.5rem;font-weight:700;color:var(--accent);margin:0.3rem 0;">$${totalVal.toLocaleString(undefined,{maximumFractionDigits:2})}</div>
+            <div style="font-size:0.85rem;color:var(--text-dim);">${ALL_CARDS.length.toLocaleString()} cards across ${Object.keys(bySport).length} sports</div>
+        </div>
+
+        <div class="insurance-section">
+            <h3>Breakdown by Sport</h3>
+            <table class="insurance-table"><thead><tr><th>Sport</th><th>Cards</th><th>Graded</th><th>Value</th><th>Avg/Card</th><th>Most Valuable</th></tr></thead>
+            <tbody>${Object.entries(bySport).sort((a,b)=>b[1].value-a[1].value).map(([sport,d])=>`<tr>
+                <td><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(sport)?sport:'other'}">${sport}</span></td>
+                <td>${d.count.toLocaleString()}</td><td>${d.graded}</td>
+                <td class="price">$${d.value.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                <td>$${(d.value/d.count).toFixed(2)}</td>
+                <td>${d.topCard?d.topCard.player_name+' ('+d.topCard.year+') $'+d.topCard._price.toFixed(2):'-'}</td>
+            </tr>`).join('')}</tbody></table>
+        </div>
+
+        <div class="insurance-section">
+            <h3>Breakdown by Era</h3>
+            <table class="insurance-table"><thead><tr><th>Era</th><th>Cards</th><th>Graded</th><th>Value</th><th>% of Total</th><th>Avg/Card</th></tr></thead>
+            <tbody>${Object.entries(byEra).sort((a,b)=>a[0].localeCompare(b[0])).map(([era,d])=>`<tr>
+                <td>${era}</td><td>${d.count.toLocaleString()}</td><td>${d.graded}</td>
+                <td class="price">$${d.value.toLocaleString(undefined,{maximumFractionDigits:0})}</td>
+                <td>${(d.value/totalVal*100).toFixed(1)}%</td>
+                <td>$${(d.value/d.count).toFixed(2)}</td>
+            </tr>`).join('')}</tbody></table>
+        </div>
+
+        <div class="insurance-section">
+            <h3>Top 25 Most Valuable Cards</h3>
+            <table class="insurance-table"><thead><tr><th>#</th><th>Player</th><th>Year</th><th>Set</th><th>Card #</th><th>Grade</th><th>Value</th></tr></thead>
+            <tbody>${top25.map((c,i)=>`<tr>
+                <td>${i+1}</td><td>${c.player_name}</td><td>${c.year}</td><td>${c.series}</td><td>${c.card_number}</td>
+                <td>${c.grader?c.grader+(c.grade_value?' '+c.grade_value:''):'-'}</td>
+                <td class="price">$${c._price.toFixed(2)}</td>
+            </tr>`).join('')}</tbody></table>
+        </div>`;
+}
+
+function exportInsurance() {
+    const rows = [['Sport','Era','Player','Year','Series','Card Number','Parallel','Grader','Grade','Estimated Value']];
+    ALL_CARDS.filter(c=>c._price>0).sort((a,b)=>b._price-a._price).forEach(c => {
+        rows.push([c.classification, Math.floor(c._year/10)*10+'s', c.player_name, c.year, c.series, c.card_number, c.parallel||'', c.grader||'', c.grade_value||'', c._price.toFixed(2)]);
+    });
+    const csv = rows.map(r => r.map(v => '"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'collection_valuation_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+}
+
+// ========== CARD DETAIL MODAL ==========
+function openCardModal(card) {
+    const images = document.getElementById('modal-images');
+    const info = document.getElementById('modal-info');
+
+    let imgHtml = '';
+    if (card.image_url) imgHtml += `<img src="${card.image_url}" alt="Front">`;
+    if (card.image_back_url) imgHtml += `<img src="${card.image_back_url}" alt="Back">`;
+    if (!imgHtml) imgHtml = '<p style="color:var(--text-dim);padding:2rem;">No images uploaded for this card</p>';
+    images.innerHTML = imgHtml;
+
+    info.innerHTML = `
+        <h2>${card.player_name}</h2>
+        <div class="detail-row">
+            <div class="detail-item"><div class="dlabel">Year</div><div class="dval">${card.year}</div></div>
+            <div class="detail-item"><div class="dlabel">Series</div><div class="dval">${card.series}</div></div>
+            <div class="detail-item"><div class="dlabel">Set</div><div class="dval">${card.set_name||card.set||''}</div></div>
+            <div class="detail-item"><div class="dlabel">Card #</div><div class="dval">${card.card_number||'-'}</div></div>
+            <div class="detail-item"><div class="dlabel">Team</div><div class="dval">${card.team_name||'-'}</div></div>
+        </div>
+        <div class="detail-row" style="margin-top:0.8rem;">
+            <div class="detail-item"><div class="dlabel">Sport</div><div class="dval"><span class="sport-badge sport-${['baseball','basketball','football','soccer','hockey'].includes(card.classification)?card.classification:'other'}">${card.classification}</span></div></div>
+            <div class="detail-item"><div class="dlabel">Parallel</div><div class="dval">${card.parallel||'Base'}</div></div>
+            <div class="detail-item"><div class="dlabel">Grade</div><div class="dval">${card.grader?card.grader+(card.grade_value?' '+card.grade_value:''):'Ungraded'}</div></div>
+            <div class="detail-item"><div class="dlabel">Value</div><div class="dval price">${card._price?'$'+card._price.toFixed(2):'-'}</div></div>
+        </div>`;
+
+    document.getElementById('card-modal').classList.add('active');
+}
+
+function closeModal() { document.getElementById('card-modal').classList.remove('active'); }
+document.getElementById('card-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 
 init();
 </script>
