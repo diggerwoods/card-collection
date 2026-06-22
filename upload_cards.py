@@ -1,10 +1,12 @@
 """Upload front and back images for specific cards."""
 from supabase import create_client
+from dotenv import load_dotenv
 import os
 
-SUPABASE_URL = "https://fokpdeenvnulmbthyjph.supabase.co"
-# Using service role key for storage uploads (bypasses RLS)
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZva3BkZWVudm51bG1idGh5anBoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjExMTY4NSwiZXhwIjoyMDk3Njg3Njg1fQ.B7ZEHhIqXUOvXgObenbskj_Ob-YpfMYsxmYdRLwND3Y"
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
+SUPABASE_URL = os.environ['SUPABASE_URL']
+SUPABASE_KEY = os.environ['SUPABASE_SERVICE_KEY']
 BUCKET = "card-images"
 
 sb = create_client(SUPABASE_URL, SUPABASE_KEY)

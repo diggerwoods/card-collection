@@ -20,10 +20,13 @@ import csv
 import sys
 import os
 from datetime import datetime
+from dotenv import load_dotenv
 from supabase import create_client
 
-SUPABASE_URL = "https://fokpdeenvnulmbthyjph.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZva3BkZWVudm51bG1idGh5anBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxMTE2ODUsImV4cCI6MjA5NzY4NzY4NX0.G1YYPlAy3s4dKcgKvdplrsukZOqXiJZgS_ePI8NeBfg"
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env'))
+
+SUPABASE_URL = os.environ['SUPABASE_URL']
+SUPABASE_KEY = os.environ['SUPABASE_SERVICE_KEY']
 
 
 def main():

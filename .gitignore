@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+data.js
+cards.json
+ludex-collection-*.csv
